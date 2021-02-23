@@ -1,3 +1,3 @@
-# DataRobot Automated Parsimony Analysis (DAPA)
+# Robust Automated Parsimony Analysis (RAPA)
 
-Automated parsimony analysis for DataRobot projects
+Automated parsimony analysis for Machine Learning projects
