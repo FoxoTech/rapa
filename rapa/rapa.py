@@ -1,7 +1,5 @@
 from .base import RAPABase 
-
-from sklearn.feature_selection import f_regression, f_classif
-from sklearn.model_selection import StratifiedKFold, KFold
+from .utils import initialize_dr_api, find_project
 
 import datarobot as dr
 
@@ -9,12 +7,17 @@ class RAPAClassif(RAPABase):
     """
         RAPA class meant for classification problems.
     """
-    def __init__(self):
-        pass
+
+    # set the problem type
+    classification = True 
+    regression = False
+
 
 class RAPARegress(RAPABase):
     """
         RAPA class meant for regression problems
     """
-    def __init__(self):
-        pass
+
+     # set the problem type
+    classification = False 
+    regression = True
