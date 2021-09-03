@@ -1,5 +1,5 @@
 from .base import RAPABase 
-from .utils import initialize_dr_api, find_project
+from .utils import initialize_dr_api, find_project, get_best_model
 
 import datarobot as dr
 
@@ -9,8 +9,8 @@ class RAPAClassif(RAPABase):
     """
 
     # set the problem type
-    classification = True 
-    regression = False
+    _classification = True 
+    _regression = False
 
 
 class RAPARegress(RAPABase):
@@ -19,5 +19,5 @@ class RAPARegress(RAPABase):
     """
 
      # set the problem type
-    classification = False 
-    regression = True
+    _classification = False 
+    _regression = True
