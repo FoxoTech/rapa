@@ -19,11 +19,12 @@ class RAPABase():
 
     POSSIBLE_TARGET_TYPES = [x for x in dir(dr.enums.TARGET_TYPE) if not x.startswith('__')] # List of DR TARGET_TYPES
 
-    classification = None # Set by child classes
-    target_type = None # Set at initialization or with 'create_submittable_dataframe()'
+    _classification = None # Set by child classes
+    target_type = None # Set at initialization
+    # target_name = None # Set with 'create_submittable_dataframe()'
     project = None # Set at initialization or with 'perform_parsimony()'
 
-    
+
 
     def __init__(self, project: Union[dr.models.project.Project, str] = None):
         if self.__class__.__name__ == "RAPABase":
@@ -76,7 +77,7 @@ class RAPABase():
 
         Returns
         ----------
-        pd.DataFrame
+        pandas.DataFrame
             DataFrame holds original values from the input Dataframe, but with 
             pre-determined k-fold cross-validation splits, and was 
             filtered down to 'max_features' size using the 'filter_function'
@@ -85,13 +86,14 @@ class RAPABase():
         # Check dataframe has 'target_name' columns
         if target_name not in input_data_df.columns:
             raise AssertionError(f'{target_name} is not a column in the input DataFrame')
+        # self.target_name = target_name # set self.target_name
 
         # Check that the dataframe can be copied and remove target_name column
         input_data_df = input_data_df.copy()
         only_features_df = input_data_df.drop(columns=[target_name])
 
         # Set target_type and kfold_type based on type of classification/regression problem
-        if self.classification:
+        if self._classification:
             # Check if binary or multi classification problem
             if len(np.unique(input_data_df[target_name].values)) == 2:
                 self.target_type = dr.enums.TARGET_TYPE.BINARY
@@ -187,7 +189,12 @@ class RAPABase():
         if target_type == None or target_type not in self.POSSIBLE_TARGET_TYPES:
             target_type = self.target_type
             if target_type == None:
-                raise Exception(f'No target type. Supply a target_type or run create_submittable_dataframe() first.')
+                raise Exception(f'No target type.')
+        
+        """if target_name == None: # TODO think about this
+            target_name = self.target_name
+            if target_name == None:
+                raise Exception(f'No target name.')"""
 
         project = dr.Project.create(sourcedata=input_data_df, project_name=project_name)
 
@@ -200,5 +207,6 @@ class RAPABase():
         return project
 
 
-    def perform_parsimony(self, project: Union[dr.models.project.Project, str], feature_range: list, featurelist_name_prefix: str = 'RAPA Reduced to', model: dr.models.model.Model = None):
+    def perform_parsimony(self, project: Union[dr.models.project.Project, str], feature_range: list, 
+                        featurelist_name_prefix: str = 'RAPA Reduced to', model: dr.models.model.Model = None):
         pass
