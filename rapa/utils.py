@@ -7,12 +7,14 @@ import logging
 from warnings import warn
 from warnings import catch_warnings
 
+from typing import Union
+
 from statistics import mean
 
 LOGGER = logging.getLogger(__name__)
 
 
-def find_project(project: str) -> dr.models.project.Project:
+def find_project(project: str) -> dr.Project:
     """Uses the DataRobot api to find a current project.
 
     Uses datarobot.Project.get() and dr.Project.list() to test if 'project' is either an id
@@ -25,7 +27,7 @@ def find_project(project: str) -> dr.models.project.Project:
 
     ## Returns: 
     ----------
-    datarobot.models.Project
+    datarobot.Project
         A datarobot project object that is either the project with the id provided, or the 
         first/only project returned by searching by project name. Returns None if the list is 
         empty.
@@ -49,7 +51,8 @@ def find_project(project: str) -> dr.models.project.Project:
             return project_list[0]
     
 
-def get_best_model(project: dr.models.project.Project, starred: bool = False, cv_score: str = 'AUC') -> dr.models.model.Model:
+# if changing get_best_model, check if it's alias get_starred_model needs changing
+def get_best_model(project: dr.Project, starred: bool = False, scoring_metric: str = 'AUC') -> dr.Model:
     """Attempts to find the 'best' model in a datarobot by averaging cross validation scores of all the
     models in a supplied project.
 
@@ -65,19 +68,19 @@ def get_best_model(project: dr.models.project.Project, starred: bool = False, cv
 
     ## Parameters 
     ----------
-    project: datarobot.models.project.Project
+    project: datarobot.Project
         The project object that will be searched for the 'best' model
 
     starred: bool, optional (default = False)
         If True, return the starred model. If there are more than one starred models,
         then warn the user and return the 'best' one
 
-    cv_score: str, optional (default = 'AUC')
+    scoring_metric: str, optional (default = 'AUC')
         What model cross validation metric to use when averaging scores
     
     ## Returns
     ----------
-    datarobot.models.Model
+    datarobot.Model
         A datarobot model that is either the 'best', starred, or the 'best' of the starred models
         from the provided datarobot project
     """
@@ -99,7 +102,7 @@ def get_best_model(project: dr.models.project.Project, starred: bool = False, cv
             num_no_cv = 0
             for starred_model in starred_models:
                 try:
-                    averages[mean(starred_model.get_cross_validation_scores()['cvScores'][cv_score].values())] = starred_model
+                    averages[mean(starred_model.get_cross_validation_scores()['cvScores'][scoring_metric].values())] = starred_model
                 except ClientError: # the model wasn't cross-validated
                     num_no_cv += 1
             if len(averages) == 0:
@@ -114,7 +117,7 @@ def get_best_model(project: dr.models.project.Project, starred: bool = False, cv
         num_no_cv = 0
         for model in all_models:
             try:
-                averages[mean(model.get_cross_validation_scores()['cvScores'][cv_score].values())] = model
+                averages[mean(model.get_cross_validation_scores()['cvScores'][scoring_metric].values())] = model
             except ClientError: # the model wasn't cross-validated
                 num_no_cv += 1
             if len(averages) == 0:
@@ -123,8 +126,14 @@ def get_best_model(project: dr.models.project.Project, starred: bool = False, cv
             else:
                 return averages[sorted(averages.keys())[-1]] # highest metric is 'best' TODO: support the other metrics
 
+# alias for get_best_model
+def get_starred_model(project: dr.Project, starred: bool = False, scoring_metric: str = 'AUC') -> dr.Model:
+    """Alias for rapa.utils.get_best_model() but makes starred = True
+    """
+    return get_best_model(project, starred = True, scoring_metric = scoring_metric)
 
-def initialize_dr_api(token_key, file_path: str = 'data/dr-tokens.pkl', endpoint: str = 'https://app.datarobot.com/api/v2') -> None:
+
+def initialize_dr_api(token_key, file_path: str = 'data/dr-tokens.pkl', endpoint: str = 'https://app.datarobot.com/api/v2'):
     """Initializes the DataRobot API with a pickled dictionary created by the user.
 
     <mark>WARNING</mark>: It is advised that the user keeps the pickled dictionary in an ignored 
@@ -135,7 +144,7 @@ def initialize_dr_api(token_key, file_path: str = 'data/dr-tokens.pkl', endpoint
 
     ## Parameters
     ----------
-    token_key: str | int | etc...
+    token_key: str
         The API token's key in the pickled dictionary located in file_path
 
     file_path: str, optional (default = 'data/dr-tokens.pkl')
@@ -162,3 +171,40 @@ def initialize_dr_api(token_key, file_path: str = 'data/dr-tokens.pkl', endpoint
     # TODO: I probably didn't catch all errors, make tests for this
     
     print(f'DataRobot API initiated with endpoint \'{endpoint}\'')
+
+
+def get_featurelist(featurelist: str, project: dr.Project) -> dr.Featurelist:
+    """Uses the DataRobot api to search for a desired featurelist.
+
+    Uses datarobot.Project.get_featurelists() to retrieve all the featurelists in
+    the project. Then, it searches the list for id's, and if it doesn't find any,
+    it searches the list again for names. Returns the first project it finds.
+
+    ## Parameters
+    ----------
+    featurelist: str
+        Either a featurelist id or a search term for featurelist name
+    
+    project: datarobot.Project
+        The project that is being searched for the featurelist
+
+    ## Returns
+    ----------
+    datarobot.Featurelist
+        The featurelist that was found. Returns None if no featurelist is found
+    """
+    featurelist = str(featurelist) # cast to string just in case id is an int or something
+    featurelists = project.get_featurelists()
+    dr_featurelist = [x for x in featurelists if featurelist == x.id] # loop over all the featurelists and get all that match featurelist (assuming it is an id)
+    if dr_featurelist: # if dr_featurelist is not empty 
+        return dr_featurelist[0] # there should only be one id
+    else: # if dr_featurelist is empty
+        dr_featurelist = [x for x in featurelists if featurelist.lower() in str(x.name).lower()] # use python's `in` to search strings
+        if not dr_featurelist: # if dr_featurelist is empty
+            warn(f'No featurelists were found with either the id or name of \'{featurelist}\'')
+            return None
+        elif len(dr_featurelist) > 1: # if dr_featurelist has more than 1
+            warn(f'More than one featurelist were found: \'{dr_featurelist}\', returning the first.')
+            return dr_featurelist[0]
+        else: # dr_Featurelist has 1
+            return dr_featurelist[0]

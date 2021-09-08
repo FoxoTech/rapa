@@ -9,6 +9,7 @@ from typing import Union
 
 import pandas as pd
 import numpy as np
+from statistics import variance
 
 import datarobot as dr
 
@@ -26,7 +27,7 @@ class RAPABase():
 
 
 
-    def __init__(self, project: Union[dr.models.project.Project, str] = None):
+    def __init__(self, project: Union[dr.Project, str] = None):
         if self.__class__.__name__ == "RAPABase":
             raise RuntimeError("Do not instantiate the RAPABase class directly; use RAPAClassif or RAPARegress")
         
@@ -137,7 +138,8 @@ class RAPABase():
 
 
     def submit_datarobot_project(self, input_data_df: pd.DataFrame, target_name: str, project_name: str, 
-                                target_type: str = None, worker_count: int = -1, mode: str = dr.AUTOPILOT_MODE.FULL_AUTO, random_state: int = None):
+                                target_type: str = None, worker_count: int = -1, mode: str = dr.AUTOPILOT_MODE.FULL_AUTO,
+                                random_state: int = None) -> dr.Project:
         """Submits the input data to DataRobot as a new modeling project.
 
         It is suggested to prepare the `input_data_df` using the
@@ -207,6 +209,53 @@ class RAPABase():
         return project
 
 
-    def perform_parsimony(self, project: Union[dr.models.project.Project, str], feature_range: list, 
-                        featurelist_name_prefix: str = 'RAPA Reduced to', model: dr.models.model.Model = None):
-        pass
+    def perform_parsimony(self, project: Union[dr.Project, str], 
+                        feature_range: List[Union[int, float]], 
+                        starting_featurelist: str = 'Informative Features',
+                        featurelist_prefix: str = 'RAPA Reduced to', 
+                        lives: int = None, 
+                        cv_variance_limit: float = None, 
+                        feature_importance_statistic: str = 'median',
+                        progress_bar: bool = True, to_graph: List[str] = [], 
+                        scoring_metric: str = None):
+        """Performs parsimony analysis by repetatively extracting feature importance from 
+        DataRobot models and creating new models with reduced features (smaller feature lists).
+
+        Parameters:
+        ----------
+        project: datarobot.Project | str
+            Either a datarobot project, or a string of it's id or name
+        
+        feature_range: list[int] | list[float]
+            Either a list containing integers representing desired featurelist lengths in descending order,
+            or a list containing floats representing desired featurelist percentages (of the original featurelist size)
+        
+        starting_featurelist: str
+            The name of the featurelist that rapa will start pasimony analysis with 
+
+        featurelist_prefix: str, optional (default = 'RAPA Reduced to')
+            The desired prefix for the featurelists that rapa creates in datarobot. Each featurelist
+            will start with the prefix, and end with the number of features in that featurelist
+        
+        lives: int, optional (default = None)
+            The number of times allowed for reducing the featurelist and obtaining a worse model. By default,
+            'lives' are off, and the entire 'feature_range' will be ran, but if supplied a number >= 0, then 
+            that is the number of 'lives' there are. 
+
+            Ex: lives = 0, feature_range = [100, 90, 80, 50]
+            RAPA finds that after making all the models for the length 80 featurelist, the 'best' model was created with the length
+            90 featurelist, so it stops and doesn't make a featurelist of length 50.
+
+            Similar to datarobot's Feature Importance Rank Ensembling for advanced feature selection (FIRE) package's 'lifes' 
+            https://www.datarobot.com/blog/using-feature-importance-rank-ensembling-fire-for-advanced-feature-selection/ 
+        
+        cv_variance_limit: float, optional (default = None)
+            The limit of cross validation variance to avoid overfitting. By default, the limit is off, 
+            and the each 'feature_range' will be ran. Limit exists only if supplied a number >= 0.0
+
+            Ex: 'feature_range' = 2.5, feature_range = [100, 90, 80, 50]
+            RAPA finds that after making all the models for the length 80 featurelist, the 'best' model was created with the length
+            90 featurelist, so it stops and doesn't make a featurelist of length 50.
+
+        """
+        dr.Project()

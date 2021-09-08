@@ -1,5 +1,5 @@
 from .base import RAPABase 
-from .utils import initialize_dr_api, find_project, get_best_model
+from . import utils
 
 import datarobot as dr
 
