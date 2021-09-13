@@ -29,26 +29,30 @@ class RAPABase():
 
     POSSIBLE_TARGET_TYPES = [x for x in dir(dr.enums.TARGET_TYPE) if not x.startswith('__')] # List of DR TARGET_TYPES
 
-    _classification = None # Set by child classes
+    """_classification = None # Set by child classes
     target_type = None # Set at initialization
     # target_name = None # Set with 'create_submittable_dataframe()'
-    project = None # Set at initialization or with 'perform_parsimony()'
-
-
+    project = None # Set at initialization or with 'perform_parsimony()'"""
 
     def __init__(self, project: Union[dr.Project, str] = None):
         if self.__class__.__name__ == "RAPABase":
             raise RuntimeError("Do not instantiate the RAPABase class directly; use RAPAClassif or RAPARegress")
-        
+        self._classification = None
+        self.target_type = None
+        self.project = None
+    
 
-
-    def create_submittable_dataframe(self, input_data_df: pd.DataFrame, target_name: str, max_features: int = 19990,
-                                    n_splits: int = 6, filter_function: Callable[[pd.DataFrame, np.ndarray], List[np.ndarray]] = f_classif,
-                                    random_state: int = None) -> Tuple[pd.DataFrame, str]:
+    def create_submittable_dataframe(self, 
+                                    input_data_df: pd.DataFrame, 
+                                    target_name: str, 
+                                    max_features: int = 19990,
+                                    n_splits: int = 6, 
+                                    filter_function: Callable[[pd.DataFrame, np.ndarray], List[np.ndarray]] = f_classif,
+                                    random_state: int = None) -> Tuple[pd.DataFrame, str]: #TODO: change return type, inplace option
         """Prepares the input data for submission as either a regression or classification problem on DataRobot.
 
         Creates pre-determined k-fold cross-validation splits and filters the feature
-        set down to a size that DataRobot can receive as input, if necessary.
+        set down to a size that DataRobot can receive as input, if necessary. TODO: private function submit_datarobot_project explanation
 
         ## Parameters
         ----------
@@ -92,13 +96,12 @@ class RAPABase():
             pre-determined k-fold cross-validation splits, and was 
             filtered down to 'max_features' size using the 'filter_function'
         """
-
+        #TODO: make private function? 
         # Check dataframe has 'target_name' columns
         if target_name not in input_data_df.columns:
-            raise AssertionError(f'{target_name} is not a column in the input DataFrame')
-        # self.target_name = target_name # set self.target_name
+            raise KeyError(f'{target_name} is not a column in the input DataFrame')
 
-        # Check that the dataframe can be copied and remove target_name column
+        # Check that the dataframe can be copied and remove target_name column TODO: inplace option
         input_data_df = input_data_df.copy()
         only_features_df = input_data_df.drop(columns=[target_name])
 
@@ -139,16 +142,23 @@ class RAPABase():
         # Change parition 0 name to 'Holdout'
         input_data_df.loc[input_data_df['partition'] == f'{fold_name_prefix} 0', 'partition'] = 'Holdout'
 
+        # TODO: break shcnasty 1 liners
         most_correlated_features = only_features_df.columns.values[np.argsort(avg_train_feature_importances)[::-1][:max_features]].tolist()
-  
+
+        # have target_name, partition, and most correlated features columns in dr_upload_df TODO: make a better comment
         datarobot_upload_df = input_data_df[[target_name, 'partition'] + most_correlated_features]
 
         return datarobot_upload_df
 
 
-    def submit_datarobot_project(self, input_data_df: pd.DataFrame, target_name: str, project_name: str, 
-                                target_type: str = None, worker_count: int = -1, mode: str = dr.AUTOPILOT_MODE.FULL_AUTO,
-                                random_state: int = None) -> dr.Project:
+    def submit_datarobot_project(self, 
+                                input_data_df: pd.DataFrame, 
+                                target_name: str, 
+                                project_name: str, 
+                                target_type: str = None, 
+                                worker_count: int = -1, 
+                                mode: str = dr.AUTOPILOT_MODE.FULL_AUTO,
+                                random_state: int = None) -> dr.Project: #TODO check input df for partition, target_name (data-robotified df), logger.warning
         """Submits the input data to DataRobot as a new modeling project.
 
         It is suggested to prepare the `input_data_df` using the
@@ -201,11 +211,6 @@ class RAPABase():
             target_type = self.target_type
             if target_type == None:
                 raise Exception(f'No target type.')
-        
-        """if target_name == None: # TODO think about this
-            target_name = self.target_name
-            if target_name == None:
-                raise Exception(f'No target name.')"""
 
         project = dr.Project.create(sourcedata=input_data_df, project_name=project_name)
 
@@ -222,19 +227,19 @@ class RAPABase():
                         project: Union[dr.Project, str] = None,
                         starting_featurelist: str = 'Informative Features',
                         featurelist_prefix: str = 'RAPA Reduced to', 
-                        lives: int = None, 
-                        cv_variance_limit: float = None, 
+                        lives: int = None, # TODO
+                        cv_variance_limit: float = None, # TODO
                         feature_importance_statistic: str = 'median',
                         progress_bar: bool = True, 
-                        to_graph: List[str] = None, 
+                        to_graph: List[str] = None, # TODO
                         scoring_metric: str = None):
         """Performs parsimony analysis by repetatively extracting feature importance from 
-        DataRobot models and creating new models with reduced features (smaller feature lists).
+        DataRobot models and creating new models with reduced features (smaller feature lists). # TODO take a look at featurelist_prefix for running multiple RAPA
 
         Parameters:
         ----------
         feature_range: list[int] | list[float]
-            Either a list containing integers representing desired featurelist lengths in descending order,
+            Either a list containing integers representing desired featurelist lengths,
             or a list containing floats representing desired featurelist percentages (of the original featurelist size)
 
         project: datarobot.Project | str, optional (default = None)
@@ -318,7 +323,7 @@ class RAPABase():
             raise Exception(f'The provided feature_range is empty.')
 
         # feature_range logic for sizes (ints) / ratios (floats)
-        if type(feature_range[0]) == int:
+        if type(feature_range[0]) == int: #TODO np.all(float) np.all(int) 
             feature_range_check = [x for x in feature_range if x < len(starting_featurelist.features)-2 and x > 0] # -2 because of target feature and partitions TODO: CHECK FOR FEATURE/PARTITIONS INSTEAD OF JUST SUBTRACTING 2
             if len(feature_range_check) != len(feature_range): # check to see if values are < 0 or > the length of the original featurelist
                 raise Exception('The provided feature_range integer values have to be: 0 < feature_range < original featurelist length')
@@ -344,7 +349,10 @@ class RAPABase():
                     except dr.errors.JobAlreadyRequested:
                         continue
         
-        # waiting for DataRobot projects
+        # waiting for DataRobot projects TODO tqdm/multithreading/print tqdm function for printing things w/o messing things up 
+        # TODO make helper function..?
+        # TODO check to see if datarobot made a function
+        # TODO request_featureimpact returns a job indicator?
         while len(project.get_all_jobs()) > 0:
             if progress_bar: # PROGRESS BAR
                 print(f'There are {str(project.get_all_jobs())} jobs remaining...'.ljust(33), end='\r') # TODO: Make this better
@@ -358,14 +366,15 @@ class RAPABase():
                     all_feature_importances.extend(model.get_feature_impact())
         
         # sort by features by feature importance statistic TODO: better way to do this, dictionary w/ [median:pd.DataFrame.median()] ?
+        stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized']
         if feature_importance_statistic.lower() == 'median':
-            stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized'].median().sort_values(ascending=False)
+            stat_feature_importances = stat_feature_importances.median().sort_values(ascending=False)
         elif feature_importance_statistic.lower() == 'mean':
-            stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized'].mean().sort_values(ascending=False)
+            stat_feature_importances = stat_feature_importances.mean().sort_values(ascending=False)
         elif feature_importance_statistic.lower() == 'cumulative':
-            stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized'].sum().sort_values(ascending=False)
+            stat_feature_importances = stat_feature_importances.sum().sort_values(ascending=False)
         else: # feature_importance_statistic isn't one of the provided statistics
-            raise Exception(f'The provided feature_importance_statistic:{feature_importance_statistic} is not one of the provided:{_config.feature_importance_statistics}')
+            raise ValueError(f'The provided feature_importance_statistic:{feature_importance_statistic} is not one of the provided:{_config.feature_importance_statistics}')
 
         # waiting for DataRobot projects
         while len(project.get_all_jobs()) > 0:
@@ -381,7 +390,7 @@ class RAPABase():
                 reduced_features = stat_feature_importances.head(desired_reduced_featurelist_size).index.values.tolist()
 
                 # create new featurelist in datarobot
-                new_featurelist_name = '{} {}'.format(featurelist_prefix, len(reduced_features))
+                new_featurelist_name = '{} {}'.format(featurelist_prefix, len(reduced_features)) # TODO have some suffix added, move try except
                 reduced_featurelist = project.create_featurelist(name=new_featurelist_name, features=reduced_features)
                 
                 # submit new featurelist and create models
@@ -400,24 +409,25 @@ class RAPABase():
                 while len(project.get_all_jobs()) > 0:
                     if not progress_bar: # PROGRESS BAR
                         print(f'There are {str(project.get_all_jobs())} jobs remaining...'.ljust(33), end='\r') # TODO: Make this better/work. currently not printing?
-                    time.sleep(10)
+                    time.sleep(5)
 
                 while(len(all_feature_importances) == 0):
                     all_feature_importances = []
                     for model in datarobot_project_models:
                         if model.featurelist_id == reduced_featurelist.id and model.metrics[scoring_metric]['crossValidation'] != None:
                             all_feature_importances.extend(model.get_feature_impact())
-                    time.sleep(10)
+                    time.sleep(5)
 
                 # sort by features by feature importance statistic TODO: better way to do this, dictionary w/ [median:pd.DataFrame.median()] ?
+                stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized']
                 if feature_importance_statistic.lower() == 'median':
-                    stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized'].median().sort_values(ascending=False)
+                    stat_feature_importances = stat_feature_importances.median().sort_values(ascending=False)
                 elif feature_importance_statistic.lower() == 'mean':
-                    stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized'].mean().sort_values(ascending=False)
+                    stat_feature_importances = stat_feature_importances.mean().sort_values(ascending=False)
                 elif feature_importance_statistic.lower() == 'cumulative':
-                    stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized'].sum().sort_values(ascending=False)
+                    stat_feature_importances = stat_feature_importances.sum().sort_values(ascending=False)
 
-            except dr.errors.ClientError as e:
+            except dr.errors.ClientError as e: # TODO flesh out exceptions logger option/verbose
                 if 'Feature list named' in str(e) and 'already exists' in str(e):
                     pass
                 else:

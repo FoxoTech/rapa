@@ -59,7 +59,7 @@ def find_project(project: str) -> dr.Project:
 # if changing get_best_model, check if it's alias get_starred_model needs changing
 def get_best_model(project: dr.Project, starred: bool = False, scoring_metric: str = 'AUC') -> dr.Model:
     """Attempts to find the 'best' model in a datarobot by averaging cross validation scores of all the
-    models in a supplied project.
+    models in a supplied project. # TODO make dictionary for minimize/maximize 
 
     CURRENTLY SUPPORTS METRICS WHERE HIGHER = BETTER
 
@@ -220,7 +220,7 @@ def parsimony_performance_boxplot(project: dr.Project,
                                 metric: str = 'AUC',
                                 split: str = 'crossValidation'):
     """Uses `seaborn`'s `boxplot` function to plot featurelist size vs performance
-    for all models that use that featurelist.
+    for all models that use that featurelist. # TODO warn about multiple prefixes, try to use new prefixes
 
     ## Paremeters
     ----------
