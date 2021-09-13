@@ -11,6 +11,10 @@ class RAPAClassif(RAPABase):
     # set the problem type
     _classification = True 
     _regression = False
+    project = None
+
+    def __init__(self, project: dr.Project = None):
+        self.project = project
 
 
 class RAPARegress(RAPABase):
@@ -21,3 +25,7 @@ class RAPARegress(RAPABase):
      # set the problem type
     _classification = False 
     _regression = True
+    project = None
+    
+    def __init__(self, project: dr.Project = None):
+        self.project = project
