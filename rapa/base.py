@@ -1,3 +1,11 @@
+from datarobot.models import feature
+from . import utils
+from . import _config
+
+import time
+
+from tqdm import tqdm # TODO check if we are in a notebook
+
 from sklearn.feature_selection import f_regression, f_classif
 from sklearn.model_selection import StratifiedKFold, KFold
 from sklearn.utils import check_array
@@ -10,6 +18,7 @@ from typing import Union
 import pandas as pd
 import numpy as np
 from statistics import variance
+from math import ceil
 
 import datarobot as dr
 
@@ -209,29 +218,31 @@ class RAPABase():
         return project
 
 
-    def perform_parsimony(self, project: Union[dr.Project, str], 
-                        feature_range: List[Union[int, float]], 
+    def perform_parsimony(self, feature_range: List[Union[int, float]], 
+                        project: Union[dr.Project, str] = None,
                         starting_featurelist: str = 'Informative Features',
                         featurelist_prefix: str = 'RAPA Reduced to', 
                         lives: int = None, 
                         cv_variance_limit: float = None, 
                         feature_importance_statistic: str = 'median',
-                        progress_bar: bool = True, to_graph: List[str] = [], 
+                        progress_bar: bool = True, 
+                        to_graph: List[str] = None, 
                         scoring_metric: str = None):
         """Performs parsimony analysis by repetatively extracting feature importance from 
         DataRobot models and creating new models with reduced features (smaller feature lists).
 
         Parameters:
         ----------
-        project: datarobot.Project | str
-            Either a datarobot project, or a string of it's id or name
-        
         feature_range: list[int] | list[float]
             Either a list containing integers representing desired featurelist lengths in descending order,
             or a list containing floats representing desired featurelist percentages (of the original featurelist size)
+
+        project: datarobot.Project | str, optional (default = None)
+            Either a datarobot project, or a string of it's id or name. If None,
+            uses the project that was provided to create the rapa class
         
-        starting_featurelist: str
-            The name of the featurelist that rapa will start pasimony analysis with 
+        starting_featurelist: str, optional (default = 'Informative Features')
+            The name or id of the featurelist that rapa will start pasimony analysis with
 
         featurelist_prefix: str, optional (default = 'RAPA Reduced to')
             The desired prefix for the featurelists that rapa creates in datarobot. Each featurelist
@@ -249,13 +260,162 @@ class RAPABase():
             Similar to datarobot's Feature Importance Rank Ensembling for advanced feature selection (FIRE) package's 'lifes' 
             https://www.datarobot.com/blog/using-feature-importance-rank-ensembling-fire-for-advanced-feature-selection/ 
         
-        cv_variance_limit: float, optional (default = None)
-            The limit of cross validation variance to avoid overfitting. By default, the limit is off, 
+        cv_mean_error_limit: float, optional (default = None)
+            The limit of cross validation mean error to help avoid overfitting. By default, the limit is off, 
             and the each 'feature_range' will be ran. Limit exists only if supplied a number >= 0.0
 
             Ex: 'feature_range' = 2.5, feature_range = [100, 90, 80, 50]
-            RAPA finds that after making all the models for the length 80 featurelist, the 'best' model was created with the length
-            90 featurelist, so it stops and doesn't make a featurelist of length 50.
+            RAPA finds that the average AUC for each CV fold is [.8, .6, .9, .5] respectfully,
+            the mean of these is 0.7. The average error is += 0.15. If 0.15 >= cv_mean_error_limit,
+            the training stops.
+        
+        feature_importance_statistic: str, optional (default = 'median')
+            How RAPA will decide each feature's importance over every model in a feature list
+            OPTIONS: ['median', 'mean', 'cumulative'] 
+
+        progress_bar: bool, optional (default = True)
+
+
+        to_graph: List[str], optional (default = None)
+
+
+        scoring_metric: str, optional (default = None)
 
         """
-        dr.Project()
+        # TODO: check the entire list for type? and make the logic more logical 
+        # TODO: exceptions raised are almost always generic, look at raising specific exceptions?
+
+        # check project
+        if project == None:
+            project = self.project
+            if project == None:
+                raise Exception('No provided datarobot.Project()')
+
+        # check scoring metric
+        if scoring_metric == None:
+            if self._classification: # classification
+                scoring_metric = 'AUC'
+            else: # regression
+                scoring_metric = 'R Squared'
+
+        # check if project is a string, and if it is, find it
+        if type(project) == str:
+            project = utils.find_project(project)
+            if project == None:
+                raise Exception(f'Could not find the project.')
+        
+        # get starting featurelist
+        try:
+            starting_featurelist = utils.get_featurelist(starting_featurelist, project)
+        except: # TODO: flesh out exceptions
+            print("Something went wrong getting the starting featurelist...")
+        
+        # check feature_range size
+        if len(feature_range) == 0:
+            raise Exception(f'The provided feature_range is empty.')
+
+        # feature_range logic for sizes (ints) / ratios (floats)
+        if type(feature_range[0]) == int:
+            feature_range_check = [x for x in feature_range if x < len(starting_featurelist.features)-2 and x > 0] # -2 because of target feature and partitions
+            if len(feature_range_check) != len(feature_range): # check to see if values are < 0 or > the length of the original featurelist
+                raise Exception('The provided feature_range integer values have to be: 0 < feature_range < original featurelist length')
+        elif type(feature_range[0]) == float:
+            feature_range_check = [x for x in feature_range if x > 0 and x < 1]
+            if len(feature_range_check) != len(feature_range):
+                raise Exception(f'The provided feature_range ratio values have to be: 0 < feature_range < 1')
+            # convert ratios to featurelist sizes
+            original_featurelist_size = len(starting_featurelist.features)-2 # -2 because of target feature and partitions
+            feature_range = [ceil(original_featurelist_size * feature_pct) for feature_pct in feature_range] # multiply by feature_pct and take ceil
+            feature_range = pd.Series(feature_range).drop_duplicates() # drop duplicates
+            feature_range = list(feature_range[feature_range < original_featurelist_size]) # take all values that less than the original featurelist size
+            feature_range.sort(reverse=True) # sort descending
+
+        # get the models from starting featurelist
+        datarobot_project_models = project.get_models()
+
+        for model in datarobot_project_models: # for each model
+            if model.featurelist_id == starting_featurelist.id: # if the model uses the starting featurelist, request the feature impact
+                if model.metrics[scoring_metric]['crossValidation'] != None:
+                    try:
+                        model.request_feature_impact()
+                    except dr.errors.JobAlreadyRequested:
+                        continue
+        
+        # waiting for DataRobot projects
+        while len(project.get_all_jobs()) > 0:
+            if progress_bar: # PROGRESS BAR
+                print(f'There are {str(project.get_all_jobs())} jobs remaining...'.ljust(33), end='\r') # TODO: Make this better
+            time.sleep(5)
+
+        # get feature impact/importances of original featurelist
+        all_feature_importances = []
+        for model in datarobot_project_models:
+            if model.featurelist_id == starting_featurelist.id: # if the model uses the starting featurelist, request the feature impact
+                if model.metrics[scoring_metric]['crossValidation'] != None:
+                    all_feature_importances.extend(model.get_feature_impact())
+        
+        # sort by features by feature importance statistic TODO: better way to do this, dictionary w/ [median:pd.DataFrame.median()] ?
+        if feature_importance_statistic.lower() == 'median':
+            stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized'].median().sort_values(ascending=False)
+        elif feature_importance_statistic.lower() == 'mean':
+            stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized'].mean().sort_values(ascending=False)
+        elif feature_importance_statistic.lower() == 'cumulative':
+            stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized'].sum().sort_values(ascending=False)
+        else: # feature_importance_statistic isn't one of the provided statistics
+            raise Exception(f'The provided feature_importance_statistic:{feature_importance_statistic} is not one of the provided:{_config.feature_importance_statistics}')
+
+        # waiting for DataRobot projects
+        while len(project.get_all_jobs()) > 0:
+            if progress_bar: # PROGRESS BAR
+                print(f'There are {str(project.get_all_jobs())} jobs remaining...'.ljust(33), end='\r') # TODO: Make this better
+            time.sleep(5)
+        
+        # perform parsimony
+        for featurelist_length in tqdm(feature_range):
+            try:
+                # get shortened featurelist
+                desired_reduced_featurelist_size = featurelist_length
+                reduced_features = stat_feature_importances.head(desired_reduced_featurelist_size).index.values.tolist()
+
+                # create new featurelist in datarobot
+                new_featurelist_name = '{} {}'.format(featurelist_prefix, len(reduced_features))
+                reduced_featurelist = project.create_featurelist(name=new_featurelist_name, features=reduced_features)
+                
+                # submit new featurelist and create models
+                project.start_autopilot(featurelist_id=reduced_featurelist.id, mode=dr.AUTOPILOT_MODE.FULL_AUTO, blend_best_models=False, prepare_model_for_deployment=False)
+                project.wait_for_autopilot(verbosity=dr.VERBOSITY_LEVEL.SILENT)
+
+                datarobot_project_models = project.get_models()
+                for model in datarobot_project_models:
+                    if model.featurelist_id == reduced_featurelist.id and model.metrics[scoring_metric]['crossValidation'] != None:
+                        try:
+                            model.request_feature_impact()
+                        except dr.errors.JobAlreadyRequested:
+                            pass
+
+                # API note: Is there a project-level wait function for all jobs, regardless of AutoPilot status?
+                while len(project.get_all_jobs()) > 0:
+                    if progress_bar: # PROGRESS BAR
+                        print(f'There are {str(project.get_all_jobs())} jobs remaining...'.ljust(33), end='\r') # TODO: Make this better
+                    time.sleep(10)
+
+                while(len(all_feature_importances) == 0):
+                    all_feature_importances = []
+                    for model in datarobot_project_models:
+                        if model.featurelist_id == reduced_featurelist.id and model.metrics[scoring_metric]['crossValidation'] != None:
+                            all_feature_importances.extend(model.get_feature_impact())
+                    time.sleep(10)
+
+                # sort by features by feature importance statistic TODO: better way to do this, dictionary w/ [median:pd.DataFrame.median()] ?
+                if feature_importance_statistic.lower() == 'median':
+                    stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized'].median().sort_values(ascending=False)
+                elif feature_importance_statistic.lower() == 'mean':
+                    stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized'].mean().sort_values(ascending=False)
+                elif feature_importance_statistic.lower() == 'cumulative':
+                    stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized'].sum().sort_values(ascending=False)
+
+            except dr.errors.ClientError as e:
+                if 'Feature list named' in str(e) and 'already exists' in str(e):
+                    pass
+                else:
+                    raise e
