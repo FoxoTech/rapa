@@ -246,7 +246,7 @@ class RAPABase():
 
         featurelist_prefix: str, optional (default = 'RAPA Reduced to')
             The desired prefix for the featurelists that rapa creates in datarobot. Each featurelist
-            will start with the prefix, and end with the number of features in that featurelist
+            will start with the prefix, include a space, and then end with the number of features in that featurelist
         
         lives: int, optional (default = None)
             The number of times allowed for reducing the featurelist and obtaining a worse model. By default,
@@ -274,7 +274,8 @@ class RAPABase():
             OPTIONS: ['median', 'mean', 'cumulative'] 
 
         progress_bar: bool, optional (default = True)
-
+            If True, a simple progres bar displaying complete and incomplete featurelists. 
+            If False, provides updates in stdout Ex: current worker count, current featurelist, etc.
 
         to_graph: List[str], optional (default = None)
 
@@ -284,6 +285,8 @@ class RAPABase():
         """
         # TODO: check the entire list for type? and make the logic more logical 
         # TODO: exceptions raised are almost always generic, look at raising specific exceptions?
+        # TODO: Support graphing over time
+        # TODO: return a dictionary of values? {"time_taken": 2123, "cv_mean_error": list[floats], ""}
 
         # check project
         if project == None:
@@ -291,7 +294,7 @@ class RAPABase():
             if project == None:
                 raise Exception('No provided datarobot.Project()')
 
-        # check scoring metric
+        # check scoring metric TODO: support more scoring metrics
         if scoring_metric == None:
             if self._classification: # classification
                 scoring_metric = 'AUC'
@@ -316,7 +319,7 @@ class RAPABase():
 
         # feature_range logic for sizes (ints) / ratios (floats)
         if type(feature_range[0]) == int:
-            feature_range_check = [x for x in feature_range if x < len(starting_featurelist.features)-2 and x > 0] # -2 because of target feature and partitions
+            feature_range_check = [x for x in feature_range if x < len(starting_featurelist.features)-2 and x > 0] # -2 because of target feature and partitions TODO: CHECK FOR FEATURE/PARTITIONS INSTEAD OF JUST SUBTRACTING 2
             if len(feature_range_check) != len(feature_range): # check to see if values are < 0 or > the length of the original featurelist
                 raise Exception('The provided feature_range integer values have to be: 0 < feature_range < original featurelist length')
         elif type(feature_range[0]) == float:
@@ -366,8 +369,8 @@ class RAPABase():
 
         # waiting for DataRobot projects
         while len(project.get_all_jobs()) > 0:
-            if progress_bar: # PROGRESS BAR
-                print(f'There are {str(project.get_all_jobs())} jobs remaining...'.ljust(33), end='\r') # TODO: Make this better
+            if not progress_bar: # PROGRESS BAR
+                print(f'There are {str(project.get_all_jobs())} jobs remaining...'.ljust(33), end='\r') # TODO: Make this better/work. currently not printing?
             time.sleep(5)
         
         # perform parsimony
@@ -395,8 +398,8 @@ class RAPABase():
 
                 # API note: Is there a project-level wait function for all jobs, regardless of AutoPilot status?
                 while len(project.get_all_jobs()) > 0:
-                    if progress_bar: # PROGRESS BAR
-                        print(f'There are {str(project.get_all_jobs())} jobs remaining...'.ljust(33), end='\r') # TODO: Make this better
+                    if not progress_bar: # PROGRESS BAR
+                        print(f'There are {str(project.get_all_jobs())} jobs remaining...'.ljust(33), end='\r') # TODO: Make this better/work. currently not printing?
                     time.sleep(10)
 
                 while(len(all_feature_importances) == 0):

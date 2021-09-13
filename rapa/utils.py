@@ -9,7 +9,12 @@ from warnings import catch_warnings
 
 from typing import Union
 
+import pandas as pd
 from statistics import mean
+
+from collections import defaultdict
+import matplotlib.pyplot as plt
+import seaborn as sb
 
 LOGGER = logging.getLogger(__name__)
 
@@ -208,3 +213,50 @@ def get_featurelist(featurelist: str, project: dr.Project) -> dr.Featurelist:
             return dr_featurelist[0]
         else: # dr_Featurelist has 1
             return dr_featurelist[0]
+    
+    
+def parsimony_performance_boxplot(project: dr.Project, 
+                                featurelist_prefix: str = 'RAPA Reduced to',
+                                metric: str = 'AUC',
+                                split: str = 'crossValidation'):
+    """Uses `seaborn`'s `boxplot` function to plot featurelist size vs performance
+    for all models that use that featurelist.
+
+    ## Paremeters
+    ----------
+    project: datarobot.Project
+        Either a datarobot project, or a string of it's id or name
+
+    featurelist_prefix: str, optional (default = 'RAPA Reduced to')
+        The desired prefix for the featurelists that will be used for plotting parsimony performance. Each featurelist
+        will start with the prefix, include a space, and then end with the number of features in that featurelist
+
+    metric: str, optional (default = 'AUC')
+        TODO: fill out
+
+    split: str, optional (default = 'crossValidation')
+        What split's performance to take from. 
+        Can be: ['crossValidation', 'holdout'] TODO: i think it can be more, double check
+
+    ## Returns
+    ----------
+    TODO: what does a matplotlib.pyplot plot return? should i even return a plot?
+    """
+    datarobot_project_models = project.get_models() # get all the models in the provided project
+    RAPA_model_featurelists = []
+    featurelist_performances = defaultdict(list)
+    for model in datarobot_project_models: # for every model, if the model has the prefix, then add it's performance
+        if featurelist_prefix not in model.featurelist_name:
+            continue
+        RAPA_model_featurelists.append(model.featurelist_name)
+        num_features = int(model.featurelist_name.split(' ')[-1]) # parse the number of features from the featurelist name
+        featurelist_performances[num_features].append(model.metrics[metric][split])
+
+    featurelist_performances_df = pd.DataFrame(featurelist_performances)[sorted(featurelist_performances.keys())]
+    featurelist_performances_df = featurelist_performances_df.dropna(how="all", axis=1).dropna()
+
+    with plt.style.context('tableau-colorblind10'):
+        sb.boxplot(data=featurelist_performances_df)
+        plt.ylabel(f'{split} {metric}')
+        plt.xlabel('Number of Features')
+        return(plt.show())
