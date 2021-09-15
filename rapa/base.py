@@ -17,7 +17,7 @@ from typing import Union
 
 import pandas as pd
 import numpy as np
-from statistics import variance
+from statistics import mean
 from math import ceil
 
 import datarobot as dr
@@ -47,7 +47,7 @@ class RAPABase():
                                     target_name: str, 
                                     max_features: int = 19990,
                                     n_splits: int = 6, 
-                                    filter_function: Callable[[pd.DataFrame, np.ndarray], List[np.ndarray]] = f_classif,
+                                    filter_function: Callable[[pd.DataFrame, np.ndarray], List[np.ndarray]] = None,
                                     random_state: int = None) -> Tuple[pd.DataFrame, str]: #TODO: change return type, inplace option
         """Prepares the input data for submission as either a regression or classification problem on DataRobot.
 
@@ -71,7 +71,7 @@ class RAPABase():
             will be retained as a holdout split, so by default this function
             sets up the dataset for 5-fold cross-validation with a holdout.
 
-        filter_function: callable, optional (default: sklearn.feature_selection.f_regression)
+        filter_function: callable, optional (default: None)
             The function used to calculate the importance of each feature in
             the initial filtering step that reduces the feature set down to
             `max_features`.
@@ -81,6 +81,9 @@ class RAPABase():
             arrays containing the feature importance of each feature and the
             P-value for that correlation, in that order.
 
+            When None, the filter function is determined by child class.
+            If an instance of `RAPAClassif()`, sklearn.feature_selection.f_classif is used.
+            If `RAPARegress()`, sklearn.feature_selection.f_regression is used.
             See scikit-learn's f_classif function for an example:
             https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_regression.html
 
@@ -105,7 +108,7 @@ class RAPABase():
         input_data_df = input_data_df.copy()
         only_features_df = input_data_df.drop(columns=[target_name])
 
-        # Set target_type and kfold_type based on type of classification/regression problem
+        # Set target_type, kfold_type, and filter_function based on type of classification/regression problem
         if self._classification:
             # Check if binary or multi classification problem
             if len(np.unique(input_data_df[target_name].values)) == 2:
@@ -113,11 +116,13 @@ class RAPABase():
             else:
                 self.target_type = dr.enums.TARGET_TYPE.MULTICLASS
             kfold_type = StratifiedKFold
+            filter_function = f_classif
         else:
             # Check array for infinite values/NaNs
             check_array(input_data_df)
             kfold_type = KFold
             self.target_type = dr.enums.TARGET_TYPE.REGRESSION
+            filter_function = f_regression
 
         # Create 'partition' column and set all values to 'train'
         input_data_df['partition'] = 'train'
@@ -227,12 +232,13 @@ class RAPABase():
                         project: Union[dr.Project, str] = None,
                         starting_featurelist: str = 'Informative Features',
                         featurelist_prefix: str = 'RAPA Reduced to', 
+                        mode: str = dr.AUTOPILOT_MODE.FULL_AUTO,
                         lives: int = None, # TODO
                         cv_variance_limit: float = None, # TODO
                         feature_importance_statistic: str = 'median',
                         progress_bar: bool = True, 
                         to_graph: List[str] = None, # TODO
-                        scoring_metric: str = None):
+                        metric: str = None):
         """Performs parsimony analysis by repetatively extracting feature importance from 
         DataRobot models and creating new models with reduced features (smaller feature lists). # TODO take a look at featurelist_prefix for running multiple RAPA
 
@@ -252,6 +258,15 @@ class RAPABase():
         featurelist_prefix: str, optional (default = 'RAPA Reduced to')
             The desired prefix for the featurelists that rapa creates in datarobot. Each featurelist
             will start with the prefix, include a space, and then end with the number of features in that featurelist
+
+        mode: str (enum), optional (default: datarobot.AUTOPILOT_MODE.FULL_AUTO)
+            The modeling mode to start the DataRobot project in.
+            Options:
+                datarobot.AUTOPILOT_MODE.FULL_AUTO
+                datarobot.AUTOPILOT_MODE.QUICK
+                datarobot.AUTOPILOT_MODE.MANUAL
+                datarobot.AUTOPILOT_MODE.COMPREHENSIVE: Runs all blueprints in
+                the repository (warning: this may be extremely slow).
         
         lives: int, optional (default = None)
             The number of times allowed for reducing the featurelist and obtaining a worse model. By default,
@@ -283,10 +298,14 @@ class RAPABase():
             If False, provides updates in stdout Ex: current worker count, current featurelist, etc.
 
         to_graph: List[str], optional (default = None)
+            A list of keys choosing which graphs to produce
 
+        metric: str, optional (default = None)
+            The metric used for scoring models. Used when finding the 'best' model, and when
+            plotting model performance
 
-        scoring_metric: str, optional (default = None)
-
+            When None, the metric is determined by what class inherits from base. For instance,
+            a `RAPAClassif` instance's default is 'AUC', and `RAPARegress` is 'R Squared'.
         """
         # TODO: check the entire list for type? and make the logic more logical 
         # TODO: exceptions raised are almost always generic, look at raising specific exceptions?
@@ -300,11 +319,11 @@ class RAPABase():
                 raise Exception('No provided datarobot.Project()')
 
         # check scoring metric TODO: support more scoring metrics
-        if scoring_metric == None:
+        if metric == None:
             if self._classification: # classification
-                scoring_metric = 'AUC'
+                metric = 'AUC'
             else: # regression
-                scoring_metric = 'R Squared'
+                metric = 'R Squared'
 
         # check if project is a string, and if it is, find it
         if type(project) == str:
@@ -343,7 +362,7 @@ class RAPABase():
 
         for model in datarobot_project_models: # for each model
             if model.featurelist_id == starting_featurelist.id: # if the model uses the starting featurelist, request the feature impact
-                if model.metrics[scoring_metric]['crossValidation'] != None:
+                if model.metrics[metric]['crossValidation'] != None:
                     try:
                         model.request_feature_impact()
                     except dr.errors.JobAlreadyRequested:
@@ -362,7 +381,7 @@ class RAPABase():
         all_feature_importances = []
         for model in datarobot_project_models:
             if model.featurelist_id == starting_featurelist.id: # if the model uses the starting featurelist, request the feature impact
-                if model.metrics[scoring_metric]['crossValidation'] != None:
+                if model.metrics[metric]['crossValidation'] != None:
                     all_feature_importances.extend(model.get_feature_impact())
         
         # sort by features by feature importance statistic TODO: better way to do this, dictionary w/ [median:pd.DataFrame.median()] ?
@@ -382,6 +401,9 @@ class RAPABase():
                 print(f'There are {str(project.get_all_jobs())} jobs remaining...'.ljust(33), end='\r') # TODO: Make this better/work. currently not printing?
             time.sleep(5)
         
+        # get the best performing model of this iteration
+        last_best_model = utils.get_best_model(project, metric=metric)
+
         # perform parsimony
         for featurelist_length in tqdm(feature_range):
             try:
@@ -394,12 +416,12 @@ class RAPABase():
                 reduced_featurelist = project.create_featurelist(name=new_featurelist_name, features=reduced_features)
                 
                 # submit new featurelist and create models
-                project.start_autopilot(featurelist_id=reduced_featurelist.id, mode=dr.AUTOPILOT_MODE.FULL_AUTO, blend_best_models=False, prepare_model_for_deployment=False)
+                project.start_autopilot(featurelist_id=reduced_featurelist.id, mode=mode, blend_best_models=False, prepare_model_for_deployment=False)
                 project.wait_for_autopilot(verbosity=dr.VERBOSITY_LEVEL.SILENT)
 
                 datarobot_project_models = project.get_models()
                 for model in datarobot_project_models:
-                    if model.featurelist_id == reduced_featurelist.id and model.metrics[scoring_metric]['crossValidation'] != None:
+                    if model.featurelist_id == reduced_featurelist.id and model.metrics[metric]['crossValidation'] != None:
                         try:
                             model.request_feature_impact()
                         except dr.errors.JobAlreadyRequested:
@@ -414,7 +436,7 @@ class RAPABase():
                 while(len(all_feature_importances) == 0):
                     all_feature_importances = []
                     for model in datarobot_project_models:
-                        if model.featurelist_id == reduced_featurelist.id and model.metrics[scoring_metric]['crossValidation'] != None:
+                        if model.featurelist_id == reduced_featurelist.id and model.metrics[metric]['crossValidation'] != None:
                             all_feature_importances.extend(model.get_feature_impact())
                     time.sleep(5)
 
@@ -426,6 +448,19 @@ class RAPABase():
                     stat_feature_importances = stat_feature_importances.mean().sort_values(ascending=False)
                 elif feature_importance_statistic.lower() == 'cumulative':
                     stat_feature_importances = stat_feature_importances.sum().sort_values(ascending=False)
+                
+                # LIVES
+                # check for the best model (supplied metric of cv)
+                current_best_model = utils.get_best_model(project, metric=metric)
+                if current_best_model == last_best_model:
+                    lives -= 1                 
+                    if lives < 0:
+                        current_best_model_score = mean(current_best_model.get_cross_validation_scores()['cvScores'][metric].values())
+                        last_best_model_score = mean(last_best_model.get_cross_validation_scores()['cvScores'][metric].values())
+                        print(f'Current model performance: {current_best_model_score}\n Last best model performance: {last_best_model_score}')
+                        break
+                last_best_model = current_best_model
+
 
             except dr.errors.ClientError as e: # TODO flesh out exceptions logger option/verbose
                 if 'Feature list named' in str(e) and 'already exists' in str(e):
