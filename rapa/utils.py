@@ -7,8 +7,6 @@ import logging
 from warnings import warn
 from warnings import catch_warnings
 
-from typing import Union
-
 import pandas as pd
 from statistics import mean
 
@@ -57,13 +55,16 @@ def find_project(project: str) -> dr.Project:
     
 
 # if changing get_best_model, check if it's alias get_starred_model needs changing
-def get_best_model(project: dr.Project, starred: bool = False, scoring_metric: str = 'AUC') -> dr.Model:
-    """Attempts to find the 'best' model in a datarobot by averaging cross validation scores of all the
+def get_best_model(project: dr.Project, 
+                prefix: str = None, 
+                starred: bool = False, 
+                metric: str = 'AUC') -> dr.Model:
+    """Attempts to find the 'best' model in a datarobot by searching cross validation scores of all the
     models in a supplied project. # TODO make dictionary for minimize/maximize 
 
     CURRENTLY SUPPORTS METRICS WHERE HIGHER = BETTER
 
-    <mark>WARNING</mark>: Actually finding the 'best' model takes more than averageing cross validation
+    WARNING: Actually finding the 'best' model takes more than averageing cross validation
     scores, and it is suggested that the 'best' model is decided and starred in DataRobot.
     (Make sure 'starred = True' if starring the 'best' model) 
 
@@ -80,7 +81,7 @@ def get_best_model(project: dr.Project, starred: bool = False, scoring_metric: s
         If True, return the starred model. If there are more than one starred models,
         then warn the user and return the 'best' one
 
-    scoring_metric: str, optional (default = 'AUC')
+    metric: str, optional (default = 'AUC')
         What model cross validation metric to use when averaging scores
     
     ## Returns
@@ -107,7 +108,7 @@ def get_best_model(project: dr.Project, starred: bool = False, scoring_metric: s
             num_no_cv = 0
             for starred_model in starred_models:
                 try:
-                    averages[mean(starred_model.get_cross_validation_scores()['cvScores'][scoring_metric].values())] = starred_model
+                    averages[mean(starred_model.get_cross_validation_scores()['cvScores'][metric].values())] = starred_model
                 except ClientError: # the model wasn't cross-validated
                     num_no_cv += 1
             if len(averages) == 0:
@@ -122,7 +123,7 @@ def get_best_model(project: dr.Project, starred: bool = False, scoring_metric: s
         num_no_cv = 0
         for model in all_models:
             try:
-                averages[mean(model.get_cross_validation_scores()['cvScores'][scoring_metric].values())] = model
+                averages[mean(model.get_cross_validation_scores()['cvScores'][metric].values())] = model
             except ClientError: # the model wasn't cross-validated
                 num_no_cv += 1
             if len(averages) == 0:
@@ -132,13 +133,16 @@ def get_best_model(project: dr.Project, starred: bool = False, scoring_metric: s
                 return averages[sorted(averages.keys())[-1]] # highest metric is 'best' TODO: support the other metrics
 
 # alias for get_best_model
-def get_starred_model(project: dr.Project, starred: bool = False, scoring_metric: str = 'AUC') -> dr.Model:
+def get_starred_model(project: dr.Project, 
+                    metric: str = 'AUC') -> dr.Model:
     """Alias for rapa.utils.get_best_model() but makes starred = True
     """
-    return get_best_model(project, starred = True, scoring_metric = scoring_metric)
+    return get_best_model(project, starred = True, metric = metric)
 
 
-def initialize_dr_api(token_key, file_path: str = 'data/dr-tokens.pkl', endpoint: str = 'https://app.datarobot.com/api/v2'):
+def initialize_dr_api(token_key, 
+                    file_path: str = 'data/dr-tokens.pkl', 
+                    endpoint: str = 'https://app.datarobot.com/api/v2'):
     """Initializes the DataRobot API with a pickled dictionary created by the user.
 
     <mark>WARNING</mark>: It is advised that the user keeps the pickled dictionary in an ignored 
@@ -178,7 +182,8 @@ def initialize_dr_api(token_key, file_path: str = 'data/dr-tokens.pkl', endpoint
     print(f'DataRobot API initiated with endpoint \'{endpoint}\'')
 
 
-def get_featurelist(featurelist: str, project: dr.Project) -> dr.Featurelist:
+def get_featurelist(featurelist: str, 
+                    project: dr.Project) -> dr.Featurelist:
     """Uses the DataRobot api to search for a desired featurelist.
 
     Uses datarobot.Project.get_featurelists() to retrieve all the featurelists in
