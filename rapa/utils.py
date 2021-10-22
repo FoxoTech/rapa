@@ -331,7 +331,7 @@ def feature_performance_stackplot(project: dr.Project,
     if starting_featurelist != None: # have the starting featurelist as well
         all_feature_importances = {}
         for model in datarobot_project_models:
-            if model.featurelist_name.startswith(featurelist_prefix) or model.featurelist_id == starting_featurelist.id: # if the model uses the starting featurelist/featurelist prefix
+            if model.featurelist_name != None and (model.featurelist_name.startswith(featurelist_prefix) or model.featurelist_id == starting_featurelist.id): # if the model uses the starting featurelist/featurelist prefix
                 if model.metrics[metric]['crossValidation'] != None:
                     if model.featurelist_name in all_feature_importances.keys():
                         for x in model.get_feature_impact():
