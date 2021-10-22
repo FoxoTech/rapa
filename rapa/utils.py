@@ -103,8 +103,9 @@ def get_best_model(project: dr.Project,
     all_models = []
     if featurelist_prefix: # if featurelist_prefix is not none or empty
         for model in project.get_models():
-            if model.featurelist_name.lower().startswith(featurelist_prefix.lower()):
-                all_models.append(model)
+            if model.featurelist_name != None:
+                if model.featurelist_name.lower().startswith(featurelist_prefix.lower()):
+                    all_models.append(model)
     else:
         all_models = project.get_models() # Retrieve all models from the supplied project
     
