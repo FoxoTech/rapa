@@ -1,10 +1,17 @@
-from datarobot.models import feature
+from logging import debug
+from re import VERBOSE
+import warnings
+from datarobot.models import feature, featurelist
 from . import utils
 from . import _config
 
 import time
 
-from tqdm import tqdm # TODO check if we are in a notebook
+try: # check if in jupyter notebook
+    get_ipython
+    from tqdm.notebook import tqdm
+except:
+    from tqdm import tqdm
 
 from sklearn.feature_selection import f_regression, f_classif
 from sklearn.model_selection import StratifiedKFold, KFold
@@ -18,7 +25,10 @@ from typing import Union
 import pandas as pd
 import numpy as np
 from statistics import mean
+from statistics import stdev
 from math import ceil
+
+import matplotlib.pyplot as plt
 
 import datarobot as dr
 
@@ -40,15 +50,106 @@ class RAPABase():
         self._classification = None
         self.target_type = None
         self.project = None
+
+    @staticmethod
+    def _wait_for_jobs(project: dr.Project, progress_bar: bool = True, sleep_time: int = 5):
+        """Gets all the jobs for a project, and if there are more than 0 current jobs, 
+        sleeps for 5 seconds and checks again.
+
+        ## Parameters
+        ----------
+        project: datarobot.Project
+            The datarobot.Project that will be probed for current jobs
+        
+        progress_bar: bool, optional (default = True)
+            If True, a print statement and a progress bar will appear TODO: a print statement and a progress bar will appear
+
+        sleep_time: int, optional (default = 5)
+            The time to sleep between datarobot.Project.get_all_jobs() 
+            (avoid sending too many api requests) TODO: warning or check for max api requests
+        """
+        # first time, no end='\r' test
+        if len(project.get_all_jobs()) > 0:
+            if progress_bar:
+                tqdm.write(f'\rThere are {len(project.get_all_jobs())} jobs remaining...'.ljust(33), end='') 
+            time.sleep(sleep_time)
+        while len(project.get_all_jobs()) > 0:
+            if progress_bar: # PROGRESS BAR
+                tqdm.write(f'\rThere are {len(project.get_all_jobs())} jobs remaining...'.ljust(33), end='') 
+            time.sleep(sleep_time)
+        return None 
+
+    @staticmethod
+    def _check_lives(lives: int, 
+                    project: dr.Project, 
+                    previous_best_model: dr.Model,
+                    featurelist_prefix: str = None, 
+                    starred: bool = False, 
+                    metric: str = 'AUC',
+                    verbose: bool = True) -> Tuple[int, dr.Model]:
+        """Finds the 'best' model of a project/featurelist of a project and returns the new
+        `lives` count (decreased by 1 if the model doesn't change) and the 'best' model
+
+        Uses `rapa.utils.get_best_model` to find the current best model, and decides
+        if the model has changed by equating `datarobot.Model.id`. Returns a tuple with
+        the number of 'lives' left in the first position, and the current 'best' model
+        in the second position.
+
+        ## Parameters
+        ----------
+        lives: int
+            The current number of 'lives' remaining in parsimony analysis
+
+        project: datarobot.Project
+            The datarobot.Project parsimony analysis is being performed in
+        
+        previous_best_model: datarobot.Model
+            The previously 'best' model in the datarobot.Project before
+            a round of parsimony analysis
+
+        featurelist_prefix: str, optional (default = None)
+            The desired prefix for the featurelists that will be used for searching
+            for the 'best' model. If None, will search the entire datarobot.Project
+        
+        starred: bool, optional (default = False)
+            If True, searching the project's starred models. If False, searches
+            all of the project's models
+        
+        metric: str, optional (default = 'AUC')
+            What model cross validation metric to use when averaging scores to
+            find the 'best' model
+        
+        verbose: bool, optional (default = True)
+            If True, prints previous and current best model information when 
+            before returning
+
+        ## Returns
+        ----------
+        Tuple(int, datarobot.Model)
+            A tuple with the new `lives` in the first position, and the new
+            'best' model after one round of persimony analysis
+        """
+
+        # check for the best model (supplied metric of cv)
+        current_best_model = utils.get_best_model(project, metric=metric, featurelist_prefix=featurelist_prefix, starred=starred)
+        if current_best_model.id == previous_best_model.id:
+            lives -= 1
+            current_best_model_score = mean(current_best_model.get_cross_validation_scores()['cvScores'][metric].values())
+            last_best_model_score = mean(previous_best_model.get_cross_validation_scores()['cvScores'][metric].values())
+            if verbose:
+                tqdm.write(f'Current model performance: \'{current_best_model_score}\'. Last best model performance: \'{last_best_model_score}\'\nNo change in the best model, so a life was lost.\nLives remaining: \'{lives}\'')
+            else:
+                tqdm.write(f'Lives left: \'{lives}\'')
+        return (lives, current_best_model)
     
 
     def create_submittable_dataframe(self, 
                                     input_data_df: pd.DataFrame, 
                                     target_name: str, 
-                                    max_features: int = 19990,
+                                    n_features: int = 19990,
                                     n_splits: int = 6, 
                                     filter_function: Callable[[pd.DataFrame, np.ndarray], List[np.ndarray]] = None,
-                                    random_state: int = None) -> Tuple[pd.DataFrame, str]: #TODO: change return type, inplace option
+                                    random_state: int = None) -> pd.DataFrame: #TODO: change return type
         """Prepares the input data for submission as either a regression or classification problem on DataRobot.
 
         Creates pre-determined k-fold cross-validation splits and filters the feature
@@ -62,7 +163,7 @@ class RAPABase():
         target_name: str
             Name of the prediction target column in `input_data_df`.
 
-        max_features: int, optional (default: 19990)
+        n_features: int, optional (default: 19990)
             The number of features to reduce the feature set in `input_data_df`
             down to. DataRobot's maximum feature set size is 20,000.
 
@@ -100,11 +201,12 @@ class RAPABase():
             filtered down to 'max_features' size using the 'filter_function'
         """
         #TODO: make private function? 
+        #TODO: check n_features, if n_features == only_features_df.shape[1], skip fclassif/fregress and ALLOW NANs
         # Check dataframe has 'target_name' columns
         if target_name not in input_data_df.columns:
             raise KeyError(f'{target_name} is not a column in the input DataFrame')
 
-        # Check that the dataframe can be copied and remove target_name column TODO: inplace option
+        # Check that the dataframe can be copied and remove target_name column
         input_data_df = input_data_df.copy()
         only_features_df = input_data_df.drop(columns=[target_name])
 
@@ -147,10 +249,10 @@ class RAPABase():
         # Change parition 0 name to 'Holdout'
         input_data_df.loc[input_data_df['partition'] == f'{fold_name_prefix} 0', 'partition'] = 'Holdout'
 
-        # TODO: break shcnasty 1 liners
-        most_correlated_features = only_features_df.columns.values[np.argsort(avg_train_feature_importances)[::-1][:max_features]].tolist()
+        # Gets the top `n_features` correlated features as a list
+        most_correlated_features = only_features_df.columns.values[np.argsort(avg_train_feature_importances)[::-1][:n_features]].tolist()
 
-        # have target_name, partition, and most correlated features columns in dr_upload_df TODO: make a better comment
+        # put target_name, partition, and most correlated features columns in dr_upload_df
         datarobot_upload_df = input_data_df[[target_name, 'partition'] + most_correlated_features]
 
         return datarobot_upload_df
@@ -162,6 +264,7 @@ class RAPABase():
                                 project_name: str, 
                                 target_type: str = None, 
                                 worker_count: int = -1, 
+                                metric: str = None,
                                 mode: str = dr.AUTOPILOT_MODE.FULL_AUTO,
                                 random_state: int = None) -> dr.Project: #TODO check input df for partition, target_name (data-robotified df), logger.warning
         """Submits the input data to DataRobot as a new modeling project.
@@ -193,6 +296,11 @@ class RAPABase():
         worker_count: int, optional (default: -1)
             The number of worker engines to assign to the DataRobot project.
             By default, -1 tells DataRobot to use all available worker engines.
+        
+        metric: str, optional (default: None)
+            Name of the metric to use for evaluating models. You can query the metrics 
+            available for the target by way of Project.get_metrics. If none is specified, 
+            then the default recommended by DataRobot is used.
 
         mode: str (enum), optional (default: datarobot.AUTOPILOT_MODE.FULL_AUTO)
             The modeling mode to start the DataRobot project in.
@@ -210,6 +318,7 @@ class RAPABase():
             same input data set with that seed.
 
         """
+        # TODO: provide an option for columns to disregard
 
         # Check for a target_type
         if target_type == None or target_type not in self.POSSIBLE_TARGET_TYPES:
@@ -220,7 +329,7 @@ class RAPABase():
         project = dr.Project.create(sourcedata=input_data_df, project_name=project_name)
 
         project.set_target(target=target_name, target_type=target_type,
-                        worker_count=worker_count, mode=mode,
+                        worker_count=worker_count, mode=mode, metric=metric,
                         advanced_options=dr.AdvancedOptions(seed=random_state, accuracy_optimized_mb=False,
                                                             prepare_model_for_deployment=False, blend_best_models=False),
                         partitioning_method=dr.UserCV(user_partition_col='partition', cv_holdout_level='Holdout'))
@@ -230,15 +339,16 @@ class RAPABase():
 
     def perform_parsimony(self, feature_range: List[Union[int, float]], 
                         project: Union[dr.Project, str] = None,
-                        starting_featurelist: str = 'Informative Features',
+                        starting_featurelist_name: str = 'Informative Features',
                         featurelist_prefix: str = 'RAPA Reduced to', 
                         mode: str = dr.AUTOPILOT_MODE.FULL_AUTO,
-                        lives: int = None, # TODO
-                        cv_variance_limit: float = None, # TODO
-                        feature_importance_statistic: str = 'median',
+                        lives: int = None,
+                        cv_average_mean_error_limit: float = None,
+                        feature_importance_metric: str = 'median',
                         progress_bar: bool = True, 
-                        to_graph: List[str] = None, # TODO
-                        metric: str = None):
+                        to_graph: List[str] = None, 
+                        metric: str = None,
+                        verbose: bool = True):
         """Performs parsimony analysis by repetatively extracting feature importance from 
         DataRobot models and creating new models with reduced features (smaller feature lists). # TODO take a look at featurelist_prefix for running multiple RAPA
 
@@ -289,27 +399,26 @@ class RAPABase():
             the mean of these is 0.7. The average error is += 0.15. If 0.15 >= cv_mean_error_limit,
             the training stops.
         
-        feature_importance_statistic: str, optional (default = 'median')
+        feature_importance_metric: str, optional (default = 'median')
             How RAPA will decide each feature's importance over every model in a feature list
-            OPTIONS: ['median', 'mean', 'cumulative'] 
+                Options: 'median', 'mean', or 'cumulative'
 
         progress_bar: bool, optional (default = True)
             If True, a simple progres bar displaying complete and incomplete featurelists. 
             If False, provides updates in stdout Ex: current worker count, current featurelist, etc.
 
         to_graph: List[str], optional (default = None)
-            A list of keys choosing which graphs to produce
+            A list of keys choosing which graphs to produce. Possible Keys:
+                'models': `seaborn` boxplot with model performances with provided metric
+                'feature_performance': `matplotlib.pyplot` stackplot of feature performances
 
         metric: str, optional (default = None)
-            The metric used for scoring models. Used when finding the 'best' model, and when
+            The metric used for scoring models, when finding the 'best' model, and when
             plotting model performance
 
             When None, the metric is determined by what class inherits from base. For instance,
-            a `RAPAClassif` instance's default is 'AUC', and `RAPARegress` is 'R Squared'.
-        """
-        # TODO: check the entire list for type? and make the logic more logical 
-        # TODO: exceptions raised are almost always generic, look at raising specific exceptions?
-        # TODO: Support graphing over time
+            a `RAPAClassif` instance's default is 'AUC', and `RAPARegress` is 'R Squared'
+        """ 
         # TODO: return a dictionary of values? {"time_taken": 2123, "cv_mean_error": list[floats], ""}
 
         # check project
@@ -324,7 +433,7 @@ class RAPABase():
                 metric = 'AUC'
             else: # regression
                 metric = 'R Squared'
-
+    
         # check if project is a string, and if it is, find it
         if type(project) == str:
             project = utils.find_project(project)
@@ -333,20 +442,20 @@ class RAPABase():
         
         # get starting featurelist
         try:
-            starting_featurelist = utils.get_featurelist(starting_featurelist, project)
+            starting_featurelist = utils.get_featurelist(starting_featurelist_name, project)
         except: # TODO: flesh out exceptions
-            print("Something went wrong getting the starting featurelist...")
-        
+            tqdm.write("Something went wrong getting the starting featurelist...")
+
         # check feature_range size
         if len(feature_range) == 0:
-            raise Exception(f'The provided feature_range is empty.')
+            raise Exception('The provided feature_range is empty.')
 
         # feature_range logic for sizes (ints) / ratios (floats)
-        if type(feature_range[0]) == int: #TODO np.all(float) np.all(int) 
+        if np.array(feature_range).dtype.kind in np.typecodes['AllInteger']: 
             feature_range_check = [x for x in feature_range if x < len(starting_featurelist.features)-2 and x > 0] # -2 because of target feature and partitions TODO: CHECK FOR FEATURE/PARTITIONS INSTEAD OF JUST SUBTRACTING 2
             if len(feature_range_check) != len(feature_range): # check to see if values are < 0 or > the length of the original featurelist
                 raise Exception('The provided feature_range integer values have to be: 0 < feature_range < original featurelist length')
-        elif type(feature_range[0]) == float:
+        elif np.array(feature_range).dtype.kind in np.typecodes['AllFloat']:
             feature_range_check = [x for x in feature_range if x > 0 and x < 1]
             if len(feature_range_check) != len(feature_range):
                 raise Exception(f'The provided feature_range ratio values have to be: 0 < feature_range < 1')
@@ -356,6 +465,13 @@ class RAPABase():
             feature_range = pd.Series(feature_range).drop_duplicates() # drop duplicates
             feature_range = list(feature_range[feature_range < original_featurelist_size]) # take all values that less than the original featurelist size
             feature_range.sort(reverse=True) # sort descending
+        else:
+            raise TypeError('Provided \'feature_range\' is not all Int or all Float.')
+
+        # ----------------------------------------------------------------------------------
+        if _config.debug_statements:
+            tqdm.write(f'{project=} {starting_featurelist=} {metric=} {feature_range=}')
+        # ----------------------------------------------------------------------------------
 
         # get the models from starting featurelist
         datarobot_project_models = project.get_models()
@@ -369,13 +485,11 @@ class RAPABase():
                         continue
         
         # waiting for DataRobot projects TODO tqdm/multithreading/print tqdm function for printing things w/o messing things up 
-        # TODO make helper function..?
         # TODO check to see if datarobot made a function
         # TODO request_featureimpact returns a job indicator?
-        while len(project.get_all_jobs()) > 0:
-            if progress_bar: # PROGRESS BAR
-                print(f'There are {str(project.get_all_jobs())} jobs remaining...'.ljust(33), end='\r') # TODO: Make this better
-            time.sleep(5)
+        tqdm.write("waiting")
+        self._wait_for_jobs(project)
+        tqdm.write("done waiting")
 
         # get feature impact/importances of original featurelist
         all_feature_importances = []
@@ -386,37 +500,65 @@ class RAPABase():
         
         # sort by features by feature importance statistic TODO: better way to do this, dictionary w/ [median:pd.DataFrame.median()] ?
         stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized']
-        if feature_importance_statistic.lower() == 'median':
+        if feature_importance_metric.lower() == 'median':
             stat_feature_importances = stat_feature_importances.median().sort_values(ascending=False)
-        elif feature_importance_statistic.lower() == 'mean':
+        elif feature_importance_metric.lower() == 'mean':
             stat_feature_importances = stat_feature_importances.mean().sort_values(ascending=False)
-        elif feature_importance_statistic.lower() == 'cumulative':
+        elif feature_importance_metric.lower() == 'cumulative':
             stat_feature_importances = stat_feature_importances.sum().sort_values(ascending=False)
-        else: # feature_importance_statistic isn't one of the provided statistics
-            raise ValueError(f'The provided feature_importance_statistic:{feature_importance_statistic} is not one of the provided:{_config.feature_importance_statistics}')
+        else: # feature_importance_metric isn't one of the provided statistics
+            raise ValueError(f'The provided feature_importance_metric:{feature_importance_metric} is not one of the provided:{_config.feature_importance_metrics}')
+
+        # retain feature performance for each round, and plot stacked bar plot of original feature performances
+        # TODO decide on coloring scheme
+        if 'feature_performance' in to_graph:
+            feature_performances = pd.DataFrame(stat_feature_importances.rename(len(stat_feature_importances)))
+            warnings.filterwarnings('ignore', message='The handle <BarContainer object of 1 artists>')
+            feature_performances.iloc[:_config.num_features_to_graph].T.set_axis(list(feature_performances.iloc[:_config.num_features_to_graph].T.columns), axis=1, inplace=False).plot(kind='bar',
+                                                                                                                                            stacked=False,
+                                                                                                                                            figsize=(_config.fig_size[0]/2, _config.fig_size[1]),
+                                                                                                                                            title=f'Top {_config.num_features_to_graph} Impact Normalized Feature Performances\nFeaturelist: {starting_featurelist_name}',
+                                                                                                                                            xlabel='Original Featurelist Length',
+                                                                                                                                            ylabel='Normalized Impact of Features',
+                                                                                                                                            colormap='tab20')
+            warnings.filterwarnings('default')
+            plt.show()
+            plt.close()
 
         # waiting for DataRobot projects
-        while len(project.get_all_jobs()) > 0:
-            if not progress_bar: # PROGRESS BAR
-                print(f'There are {str(project.get_all_jobs())} jobs remaining...'.ljust(33), end='\r') # TODO: Make this better/work. currently not printing?
-            time.sleep(5)
+        self._wait_for_jobs(project)
         
         # get the best performing model of this iteration
-        last_best_model = utils.get_best_model(project, metric=metric)
+        previous_best_model = utils.get_best_model(project, metric=metric, featurelist_prefix=starting_featurelist_name)
+
+        
+        tqdm.write(f'Project: {project.project_name} | Featurelist Prefix: {featurelist_prefix} | Feature Range: {feature_range}')
+        if verbose:
+            tqdm.write(f'Feature Importance Metric: {feature_importance_metric} | Model Performance Metric: {metric}')
+            if lives:
+                tqdm.write(f'Lives: {lives}')
+            if cv_average_mean_error_limit:
+                tqdm.write(f'CV Mean Error Limit: {cv_average_mean_error_limit}')
 
         # perform parsimony
-        for featurelist_length in tqdm(feature_range):
+        for featurelist_length in tqdm(feature_range, disable= not progress_bar):
+            # ---------------------------------------------------------------------------------------------
+            if verbose:
+                tqdm.write(f"---------- {featurelist_prefix} {featurelist_length} ----------")
+            # ---------------------------------------------------------------------------------------------
             try:
                 # get shortened featurelist
                 desired_reduced_featurelist_size = featurelist_length
                 reduced_features = stat_feature_importances.head(desired_reduced_featurelist_size).index.values.tolist()
 
-                # create new featurelist in datarobot
+                # ----- create new featurelist in datarobot -----
                 new_featurelist_name = '{} {}'.format(featurelist_prefix, len(reduced_features)) # TODO have some suffix added, move try except
                 reduced_featurelist = project.create_featurelist(name=new_featurelist_name, features=reduced_features)
                 
-                # submit new featurelist and create models
+                # ----- submit new featurelist and create models -----
+                tqdm.write('starting autopilot...')
                 project.start_autopilot(featurelist_id=reduced_featurelist.id, mode=mode, blend_best_models=False, prepare_model_for_deployment=False)
+                tqdm.write('waiting for autopilot...')
                 project.wait_for_autopilot(verbosity=dr.VERBOSITY_LEVEL.SILENT)
 
                 datarobot_project_models = project.get_models()
@@ -428,10 +570,9 @@ class RAPABase():
                             pass
 
                 # API note: Is there a project-level wait function for all jobs, regardless of AutoPilot status?
-                while len(project.get_all_jobs()) > 0:
-                    if not progress_bar: # PROGRESS BAR
-                        print(f'There are {str(project.get_all_jobs())} jobs remaining...'.ljust(33), end='\r') # TODO: Make this better/work. currently not printing?
-                    time.sleep(5)
+                tqdm.write("waiting")
+                self._wait_for_jobs(project)
+                tqdm.write("done waiting")
 
                 while(len(all_feature_importances) == 0):
                     all_feature_importances = []
@@ -442,25 +583,68 @@ class RAPABase():
 
                 # sort by features by feature importance statistic TODO: better way to do this, dictionary w/ [median:pd.DataFrame.median()] ?
                 stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized']
-                if feature_importance_statistic.lower() == 'median':
+                if feature_importance_metric.lower() == 'median':
                     stat_feature_importances = stat_feature_importances.median().sort_values(ascending=False)
-                elif feature_importance_statistic.lower() == 'mean':
+                elif feature_importance_metric.lower() == 'mean':
                     stat_feature_importances = stat_feature_importances.mean().sort_values(ascending=False)
-                elif feature_importance_statistic.lower() == 'cumulative':
+                elif feature_importance_metric.lower() == 'cumulative':
                     stat_feature_importances = stat_feature_importances.sum().sort_values(ascending=False)
                 
-                # LIVES
-                # check for the best model (supplied metric of cv)
-                current_best_model = utils.get_best_model(project, metric=metric)
-                if current_best_model == last_best_model:
-                    lives -= 1                 
-                    if lives < 0:
-                        current_best_model_score = mean(current_best_model.get_cross_validation_scores()['cvScores'][metric].values())
-                        last_best_model_score = mean(last_best_model.get_cross_validation_scores()['cvScores'][metric].values())
-                        print(f'Current model performance: {current_best_model_score}\n Last best model performance: {last_best_model_score}')
-                        break
-                last_best_model = current_best_model
+                # ----- Graphing Feature Performance -----
+                if 'feature_performance' in to_graph:
+                    utils.feature_performance_stackplot(project=project,
+                                                        featurelist_prefix=featurelist_prefix,
+                                                        starting_featurelist=starting_featurelist,
+                                                        feature_importance_metric=feature_importance_metric,
+                                                        metric=metric)
+                    plt.show()
+                    plt.close()
+                
 
+                # ----- LIVES -----
+                # check for the best model (supplied metric of cv)
+                if lives != None:
+                    if featurelist_length == feature_range[0]: # for the first time, check model scores instead of making sure the model id doesn't change (what _check_lives does)
+                        current_best_model = utils.get_best_model(project, metric=metric, featurelist_prefix=featurelist_prefix)
+                        previous_best_model_score = mean(previous_best_model.get_cross_validation_scores()['cvScores'][metric].values())
+                        current_best_model_score = mean(current_best_model.get_cross_validation_scores()['cvScores'][metric].values())
+                        if previous_best_model_score > current_best_model_score:
+                            lives -= 1
+                            tqdm.write(f'Current model performance: \'{current_best_model_score}\'. Last best model performance: \'{previous_best_model_score}\'\nNo change in the best model, so a life was lost.\nLives remaining: \'{lives}\'')
+                            previous_best_model = current_best_model
+                    else: # get the best model and check their id
+                        lives, previous_best_model = self._check_lives(lives=lives, 
+                                                                        project=project, 
+                                                                        previous_best_model=previous_best_model, 
+                                                                        featurelist_prefix=featurelist_prefix, 
+                                                                        metric=metric,
+                                                                        verbose=True)
+                    if lives < 0:
+                        current_best_model_score = mean(previous_best_model.get_cross_validation_scores()['cvScores'][metric].values())
+                        tqdm.write(f'Ran out of lives.\nBest model: \'{previous_best_model}\'\nAccuracy ({metric}):\'{current_best_model_score}\'')
+                        break
+
+                    # ----------------------------------------------------------------------------------
+                    if verbose:
+                        tqdm.write(f'Lives left: {lives} | Previous Model Best Score: {previous_best_model_score} | Current Best Model Score: {current_best_model_score=}')
+                    # ----------------------------------------------------------------------------------
+                    
+                # ----- cv_average_mean_error_limit -----
+                # for the current featurelist, check the cv metric for all models and get the standard deviation of the metric among the cv folds for each model.
+                # Then, take the average of those standard deviation values and check that it is below the cv_average_mean_error_limit
+                if cv_average_mean_error_limit != None:
+                    cv_metrics_dict = {}
+                    for model in datarobot_project_models:
+                        if model.featurelist_id == reduced_featurelist.id and model.metrics[metric]['crossValidation'] != None:
+                            cv_metrics_dict[model] = stdev(model.get_cross_validation_scores()['cvScores'][metric].values())
+                    error_from_mean = mean(cv_metrics_dict.values())
+                    if error_from_mean > cv_average_mean_error_limit:
+                        tqdm.write(f'Error from the mean over the limit! Stopping parsimony analysis.\nError from the mean: \'{error_from_mean}\'\nLimit set: \'{cv_average_mean_error_limit}\'')
+                        break
+                    # ----------------------------------------------------------------------------------
+                    if verbose:
+                        tqdm.write(f'CV Error From the Mean: {error_from_mean} | CV Mean Error Limit: {cv_average_mean_error_limit} | CV Model Performance Metric: {metric}')
+                    # ----------------------------------------------------------------------------------
 
             except dr.errors.ClientError as e: # TODO flesh out exceptions logger option/verbose
                 if 'Feature list named' in str(e) and 'already exists' in str(e):
