@@ -273,7 +273,7 @@ def parsimony_performance_boxplot(project: dr.Project,
     RAPA_model_featurelists = []
     featurelist_performances = defaultdict(list)
     for model in datarobot_project_models: # for every model, if the model has the prefix, then add it's performance
-        if featurelist_prefix in model.featurelist_name:
+        if model.featurelist_name != None and featurelist_prefix in model.featurelist_name:
             RAPA_model_featurelists.append(model.featurelist_name)
             num_features = int(model.featurelist_name.split(' ')[-1]) # parse the number of features from the featurelist name
             featurelist_performances[num_features].append(model.metrics[metric][split])
@@ -396,4 +396,4 @@ def feature_performance_stackplot(project: dr.Project,
     _, ax = plt.subplots(figsize=(_config.fig_size[0], _config.fig_size[1]/2))
     ax.stackplot(x, y, labels=list(df.index))
     ax.legend(loc='upper left')
-    return ax
+    return x, y

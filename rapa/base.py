@@ -166,6 +166,8 @@ class RAPABase():
         n_features: int, optional (default: 19990)
             The number of features to reduce the feature set in `input_data_df`
             down to. DataRobot's maximum feature set size is 20,000.
+            If `n_features` has the same number of features as the `input_data_df`,
+            NaN values
 
         n_splits: int, optional (default: 6)
             The number of cross-validation splits to create. One of the splits
@@ -201,7 +203,6 @@ class RAPABase():
             filtered down to 'max_features' size using the 'filter_function'
         """
         #TODO: make private function? 
-        #TODO: check n_features, if n_features == only_features_df.shape[1], skip fclassif/fregress and ALLOW NANs
         # Check dataframe has 'target_name' columns
         if target_name not in input_data_df.columns:
             raise KeyError(f'{target_name} is not a column in the input DataFrame')
@@ -209,6 +210,13 @@ class RAPABase():
         # Check that the dataframe can be copied and remove target_name column
         input_data_df = input_data_df.copy()
         only_features_df = input_data_df.drop(columns=[target_name])
+
+        # Check if the requested number of features is equal to the number of features provided
+        # If True, skip feature filtering and allow NaNs
+        if n_features == only_features_df.shape[1]:
+            feature_filter = False
+        else:
+            feature_filter = True
 
         # Set target_type, kfold_type, and filter_function based on type of classification/regression problem
         if self._classification:
@@ -221,7 +229,8 @@ class RAPABase():
             filter_function = f_classif
         else:
             # Check array for infinite values/NaNs
-            check_array(input_data_df)
+            if feature_filter:
+                check_array(input_data_df)
             kfold_type = KFold
             self.target_type = dr.enums.TARGET_TYPE.REGRESSION
             filter_function = f_regression
@@ -239,21 +248,26 @@ class RAPABase():
             input_data_df.iloc[fold_indices, input_data_df.columns.get_loc('partition')] = f'{fold_name_prefix} {fold_num}'
 
             # Fold 0 is the holdout set, so don't calculate feature importances using that fold
-            if fold_num > 0:
+            if feature_filter and fold_num > 0:
                 feature_importances, _ = filter_function(only_features_df.iloc[fold_indices].values, input_data_df[target_name].iloc[fold_indices].values)
                 train_feature_importances.append(feature_importances)
 
-        # We calculate the overall feature importance scores by averaging the feature importance scores across all of the training folds
-        avg_train_feature_importances = np.mean(train_feature_importances, axis=0)
+        if feature_filter:
+            # We calculate the overall feature importance scores by averaging the feature importance scores across all of the training folds
+            avg_train_feature_importances = np.mean(train_feature_importances, axis=0)
 
-        # Change parition 0 name to 'Holdout'
-        input_data_df.loc[input_data_df['partition'] == f'{fold_name_prefix} 0', 'partition'] = 'Holdout'
+            # Change parition 0 name to 'Holdout'
+            input_data_df.loc[input_data_df['partition'] == f'{fold_name_prefix} 0', 'partition'] = 'Holdout'
 
-        # Gets the top `n_features` correlated features as a list
-        most_correlated_features = only_features_df.columns.values[np.argsort(avg_train_feature_importances)[::-1][:n_features]].tolist()
+            # Gets the top `n_features` correlated features as a list
+            most_correlated_features = only_features_df.columns.values[np.argsort(avg_train_feature_importances)[::-1][:n_features]].tolist()
 
-        # put target_name, partition, and most correlated features columns in dr_upload_df
-        datarobot_upload_df = input_data_df[[target_name, 'partition'] + most_correlated_features]
+            # put target_name, partition, and most correlated features columns in dr_upload_df
+            datarobot_upload_df = input_data_df[[target_name, 'partition'] + most_correlated_features]
+        
+        else:
+            # put target_name, partition, and most correlated features columns in dr_upload_df
+            datarobot_upload_df = input_data_df[[target_name, 'partition'] + only_features_df.columns.values.tolist()]
 
         return datarobot_upload_df
 
