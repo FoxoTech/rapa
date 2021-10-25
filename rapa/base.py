@@ -86,7 +86,7 @@ class RAPABase():
                     featurelist_prefix: str = None, 
                     starred: bool = False, 
                     metric: str = 'AUC',
-                    verbose: bool = True) -> Tuple[int, dr.Model]:
+                    verbose: bool = False) -> Tuple[int, dr.Model]:
         """Finds the 'best' model of a project/featurelist of a project and returns the new
         `lives` count (decreased by 1 if the model doesn't change) and the 'best' model
 
@@ -167,7 +167,7 @@ class RAPABase():
             The number of features to reduce the feature set in `input_data_df`
             down to. DataRobot's maximum feature set size is 20,000.
             If `n_features` has the same number of features as the `input_data_df`,
-            NaN values
+            NaN values are allowed because no feature filtering will ocurr
 
         n_splits: int, optional (default: 6)
             The number of cross-validation splits to create. One of the splits
@@ -434,6 +434,10 @@ class RAPABase():
             a `RAPAClassif` instance's default is 'AUC', and `RAPARegress` is 'R Squared'
         """ 
         # TODO: return a dictionary of values? {"time_taken": 2123, "cv_mean_error": list[floats], ""}
+        # TODO: graph cv performance boxplots
+        # TODO: graph pareto front of median model performance vs feature list size
+        # TODO: support more scoring metrics
+        # TODO: CHECK FOR FEATURE/PARTITIONS INSTEAD OF JUST SUBTRACTING 2
 
         # check project
         if project == None:
@@ -441,7 +445,7 @@ class RAPABase():
             if project == None:
                 raise Exception('No provided datarobot.Project()')
 
-        # check scoring metric TODO: support more scoring metrics
+        # check scoring metric 
         if metric == None:
             if self._classification: # classification
                 metric = 'AUC'
@@ -466,7 +470,7 @@ class RAPABase():
 
         # feature_range logic for sizes (ints) / ratios (floats)
         if np.array(feature_range).dtype.kind in np.typecodes['AllInteger']: 
-            feature_range_check = [x for x in feature_range if x < len(starting_featurelist.features)-2 and x > 0] # -2 because of target feature and partitions TODO: CHECK FOR FEATURE/PARTITIONS INSTEAD OF JUST SUBTRACTING 2
+            feature_range_check = [x for x in feature_range if x < len(starting_featurelist.features)-2 and x > 0] # -2 because of target feature and partitions 
             if len(feature_range_check) != len(feature_range): # check to see if values are < 0 or > the length of the original featurelist
                 raise Exception('The provided feature_range integer values have to be: 0 < feature_range < original featurelist length')
         elif np.array(feature_range).dtype.kind in np.typecodes['AllFloat']:
@@ -497,9 +501,7 @@ class RAPABase():
                         model.request_feature_impact()
                     except dr.errors.JobAlreadyRequested:
                         continue
-        
-        # waiting for DataRobot projects TODO tqdm/multithreading/print tqdm function for printing things w/o messing things up 
-        # TODO check to see if datarobot made a function
+         
         # TODO request_featureimpact returns a job indicator?
         tqdm.write("waiting")
         self._wait_for_jobs(project)
