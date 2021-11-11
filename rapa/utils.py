@@ -1,4 +1,4 @@
-from . import _config
+from . import config
 
 import datarobot as dr
 from datarobot.errors import ClientError
@@ -14,6 +14,8 @@ import pandas as pd
 import numpy as np
 from statistics import mean
 from statistics import median
+
+import string
 
 from collections import defaultdict
 import matplotlib.pyplot as plt
@@ -241,7 +243,8 @@ def get_featurelist(featurelist: str,
 def parsimony_performance_boxplot(project: dr.Project, 
                                 featurelist_prefix: str = 'RAPA Reduced to',
                                 metric: str = 'AUC',
-                                split: str = 'crossValidation'):
+                                split: str = 'crossValidation',
+                                featurelist_lengths: list = None):
     """Uses `seaborn`'s `boxplot` function to plot featurelist size vs performance
     for all models that use that featurelist. # TODO warn about multiple prefixes, try to use new prefixes
 
@@ -260,10 +263,13 @@ def parsimony_performance_boxplot(project: dr.Project,
     split: str, optional (default = 'crossValidation')
         What split's performance to take from. 
         Can be: ['crossValidation', 'holdout'] TODO: i think it can be more, double check
+    
+    featurelist_lengths: list, optional (default = None)
+        A list of featurelist lengths to plot
 
     ## Returns
     ----------
-    TODO: what does a matplotlib.pyplot plot return? should i even return a plot?
+    None TODO: return plot?
     """
     # if `project` is a string, find the project
     if type(project) is str:
@@ -275,23 +281,27 @@ def parsimony_performance_boxplot(project: dr.Project,
     for model in datarobot_project_models: # for every model, if the model has the prefix, then add it's performance
         if model.featurelist_name != None and featurelist_prefix in model.featurelist_name:
             RAPA_model_featurelists.append(model.featurelist_name)
-            num_features = int(model.featurelist_name.split(' ')[-1]) # parse the number of features from the featurelist name
-            featurelist_performances[num_features].append(model.metrics[metric][split])
+            num_features = int(model.featurelist_name.split(' ')[-1].strip('()')) # parse the number of features from the featurelist name
+            if featurelist_lengths and num_features in featurelist_lengths:
+                featurelist_performances[num_features].append(model.metrics[metric][split])
+            elif not featurelist_lengths:
+                featurelist_performances[num_features].append(model.metrics[metric][split])
 
-    featurelist_performances_df = pd.DataFrame(featurelist_performances)[sorted(featurelist_performances.keys())]
-    featurelist_performances_df = featurelist_performances_df.dropna(how="all", axis=1).dropna()
-    featurelist_performances_df.columns = [str(x) for x in featurelist_performances_df.columns][::-1]
-
+    featurelist_performances_df = pd.DataFrame(featurelist_performances)[sorted(featurelist_performances.keys())[::-1]]
+    
     with plt.style.context('tableau-colorblind10'):
         plt.ylabel(f'{split} {metric}')
         plt.xlabel('Number of Features')
-        return(sb.boxplot(data=featurelist_performances_df))
+        plt.title(f'{project.project_name} - {featurelist_prefix}\nParsimonious Model Performance')
+        sb.boxplot(data=featurelist_performances_df)
+    return featurelist_performances_df
     
 def feature_performance_stackplot(project: dr.Project, 
                                 featurelist_prefix: str = 'RAPA Reduced to',
                                 starting_featurelist: str = None,
                                 feature_importance_metric: str = 'median',
-                                metric: str = 'AUC'):
+                                metric: str = 'AUC',
+                                vlines: bool = False):
     """Utilizes `matplotlib.pyplot.stackplot` to show feature performance during 
     parsimony analysis.
 
@@ -314,10 +324,13 @@ def feature_performance_stackplot(project: dr.Project,
 
     metric: str, optional (default = 'AUC')
         Which metric to use when finding feature importance of each model
+    
+    vlines: bool, optional (default = False)
+        Whether to add vertical lines at the featurelist lengths or not, False by default
 
     ## Returns
     ----------
-    TODO: what does a matplotlib.pyplot plot return? should i even return a plot?
+    None TODO: return plot?
     """
     # if `project` is a string, find the project
     if type(project) is str:
@@ -343,7 +356,7 @@ def feature_performance_stackplot(project: dr.Project,
                         all_feature_importances[model.featurelist_name] = {} 
                         for x in model.get_feature_impact():
                             all_feature_importances[model.featurelist_name][x['featureName']] = [x['impactNormalized']]
-    else: # same as if, but without starting featurelist
+    else: # same as if, but without starting featurelist 
         all_feature_importances = {}
         for model in datarobot_project_models:
             if model.featurelist_name.startswith(featurelist_prefix): # if the model's featurelist starts with the featurelist prefix
@@ -375,7 +388,7 @@ def feature_performance_stackplot(project: dr.Project,
     if starting_featurelist != None: # rename starting_featurelist column to have the number of features
         df = df.rename(columns={starting_featurelist.name: f'{starting_featurelist.name} {len(starting_featurelist.features)}'})
     df = df/df.sum()
-    cols = [(int(x.split(' ')[-1]), x) for x in list(df.columns)] # get a list of tuples where (# of features, column name)
+    cols = [(int(x.split(' ')[-1].strip('()')), x) for x in list(df.columns)] # get a list of tuples where (# of features, column name)
     cols = sorted(cols)[::-1] # sorted descending by first object in tuple (featurelist size)
     x = []
     y = []
@@ -384,16 +397,26 @@ def feature_performance_stackplot(project: dr.Project,
         y.append(list(df[col[1]]))
     y = np.array(y)
     y = y.T
-    labels = {}
+    
+    len_smallest_featurelist = min([int(x.split(' ')[-1].strip('()')) for x in df.columns])
+    smallest_featurelist = featurelist_prefix + ' (' + str(len_smallest_featurelist) + ')'
 
     # unreadable list comprehension really means: get a dictionary with keys that are the old column names (features), and values with new column names (starting with underscore)
+    # at least show config.MIN_FEATURES_TO_GRAPH
     # this is so that the underscored names are not shown in the legend.
-    labels = [{x:'_' + str(x)} if i > _config.num_features_to_graph or i >= int(list(df.columns)[-1].split(' ')[-1]) else {x:x} for i, x in enumerate(df.iloc[:,-1].sort_values(ascending=False).index)]
+    labels = [{x:'_' + str(x)} if i > config.NUM_FEATURES_TO_GRAPH or i >= min([int(x.split(' ')[-1].strip('()')) for x in df.columns]) else {x:x} for i, x in enumerate(df.loc[:,smallest_featurelist].sort_values(ascending=False).index)]
     l = {}
     for label in labels:
         l.update(label)
+
     df = df.rename(index=l)
-    _, ax = plt.subplots(figsize=(_config.fig_size[0], _config.fig_size[1]/2))
-    ax.stackplot(x, y, labels=list(df.index))
+    _, ax = plt.subplots(figsize=(config.FIG_SIZE[0], config.FIG_SIZE[1]/2))
+    plt.xlabel('Feature List Length')
+    plt.ylabel('Normalized Feature Impact\n(Normalized Impact Normalized)')
+    plt.title(f'{project.project_name} - {featurelist_prefix}\nFeature Impact Stackplot')
+    if vlines:
+        plt.vlines([z for z in range(1,len(x)-1)], ymin=0, ymax=1, linestyles='dashed')
+    ax.stackplot(x, y, labels=list(df.index), colors=plt.cm.tab20.colors)
     ax.legend(loc='upper left')
-    return x, y
+    return None
+

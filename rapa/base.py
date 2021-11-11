@@ -1,17 +1,7 @@
-from logging import debug
-from re import VERBOSE
-import warnings
-from datarobot.models import feature, featurelist
 from . import utils
-from . import _config
+from . import config
 
 import time
-
-try: # check if in jupyter notebook
-    get_ipython
-    from tqdm.notebook import tqdm
-except:
-    from tqdm import tqdm
 
 from sklearn.feature_selection import f_regression, f_classif
 from sklearn.model_selection import StratifiedKFold, KFold
@@ -31,6 +21,16 @@ from math import ceil
 import matplotlib.pyplot as plt
 
 import datarobot as dr
+
+import logging
+import warnings
+
+try: # check if in jupyter notebook
+    get_ipython
+    from tqdm.notebook import tqdm
+except:
+    from tqdm import tqdm
+
 
 class RAPABase():
     """
@@ -52,7 +52,7 @@ class RAPABase():
         self.project = None
 
     @staticmethod
-    def _wait_for_jobs(project: dr.Project, progress_bar: bool = True, sleep_time: int = 5):
+    def _wait_for_jobs(project: dr.Project, progress_bar: bool = True, sleep_time: int = 5, pbar = None, pbar_prefix: str = '', job_type: str = ''):
         """Gets all the jobs for a project, and if there are more than 0 current jobs, 
         sleeps for 5 seconds and checks again.
 
@@ -67,16 +67,32 @@ class RAPABase():
         sleep_time: int, optional (default = 5)
             The time to sleep between datarobot.Project.get_all_jobs() 
             (avoid sending too many api requests) TODO: warning or check for max api requests
+        
+        pbar: tqdm.tqdm, optional (defaut = None)
+            A progress bar object from tqdm
+        
+        pbar_prefix: str, optional (default = '')
+            The prefix to put in frot of the progress bar message
+        
+        job_type: str, optional (default = '')
+            A string to put in front of the jobs left (after pbar_prefix)
         """
-        # first time, no end='\r' test
         if len(project.get_all_jobs()) > 0:
             if progress_bar:
-                tqdm.write(f'\rThere are {len(project.get_all_jobs())} jobs remaining...'.ljust(33), end='') 
+                if pbar:
+                    pbar.set_description(f'{pbar_prefix}{job_type}job(s) remaining ({len(project.get_all_jobs())})') 
+                else:
+                    tqdm.write(f'\r{job_type}job(s) remaining ({len(project.get_all_jobs())})', end='') 
             time.sleep(sleep_time)
         while len(project.get_all_jobs()) > 0:
             if progress_bar: # PROGRESS BAR
-                tqdm.write(f'\rThere are {len(project.get_all_jobs())} jobs remaining...'.ljust(33), end='') 
+                if pbar:
+                    pbar.set_description(f'{pbar_prefix}Feature Impact job(s) remaining ({len(project.get_all_jobs())})') 
+                else:
+                    tqdm.write(f'\r{job_type}job(s) remaining ({len(project.get_all_jobs())})', end='') 
             time.sleep(sleep_time)
+        if not progress_bar:
+            tqdm.write(f'\r{job_type}job(s) remaining ({len(project.get_all_jobs())})', end='\n') 
         return None 
 
     @staticmethod
@@ -137,11 +153,26 @@ class RAPABase():
             current_best_model_score = mean(current_best_model.get_cross_validation_scores()['cvScores'][metric].values())
             last_best_model_score = mean(previous_best_model.get_cross_validation_scores()['cvScores'][metric].values())
             if verbose:
-                tqdm.write(f'Current model performance: \'{current_best_model_score}\'. Last best model performance: \'{last_best_model_score}\'\nNo change in the best model, so a life was lost.\nLives remaining: \'{lives}\'')
+                tqdm.write(f'Current model performance: \'{current_best_model_score}\'. Previous best model performance: \'{last_best_model_score}\'\nNo change in the best model, so a life was lost.\nLives remaining: \'{lives}\'')
             else:
                 tqdm.write(f'Lives left: \'{lives}\'')
         return (lives, current_best_model)
     
+    @staticmethod #TODO FIX THIS SO IT WORKS WITH THE LAST FEATURELIST
+    def _feature_performances_hbar(stat_feature_importances, featurelist_name, stacked=False, colormap='tab20'):
+        feature_performances = pd.DataFrame(stat_feature_importances.rename(len(stat_feature_importances)))
+        warnings.filterwarnings('ignore', message='The handle <BarContainer object of 1 artists>')
+        ax = feature_performances.iloc[:config.NUM_FEATURES_TO_GRAPH].T.set_axis(list(feature_performances.iloc[:config.NUM_FEATURES_TO_GRAPH].T.columns), axis=1, inplace=False).plot(kind='barh',
+                                                                                                                                            stacked=stacked,
+                                                                                                                                            figsize=(config.FIG_SIZE[0], config.FIG_SIZE[1]/2),
+                                                                                                                                            title=f'{min([config.NUM_FEATURES_TO_GRAPH, len(feature_performances)])} Impact Normalized Feature Performances\nFeaturelist: {featurelist_name}',
+                                                                                                                                            xlabel='Featurelist Length',
+                                                                                                                                            ylabel='Normalized Impact of Features',
+                                                                                                                                            colormap=colormap)
+        ax.set(xlabel='Normalized Impact of Features')
+        warnings.filterwarnings('default')
+        return None
+
 
     def create_submittable_dataframe(self, 
                                     input_data_df: pd.DataFrame, 
@@ -213,7 +244,7 @@ class RAPABase():
 
         # Check if the requested number of features is equal to the number of features provided
         # If True, skip feature filtering and allow NaNs
-        if n_features == only_features_df.shape[1]:
+        if n_features >= only_features_df.shape[1]:
             feature_filter = False
         else:
             feature_filter = True
@@ -339,6 +370,7 @@ class RAPABase():
             target_type = self.target_type
             if target_type == None:
                 raise Exception(f'No target type.')
+        
 
         project = dr.Project.create(sourcedata=input_data_df, project_name=project_name)
 
@@ -439,6 +471,8 @@ class RAPABase():
         # TODO: support more scoring metrics
         # TODO: CHECK FOR FEATURE/PARTITIONS INSTEAD OF JUST SUBTRACTING 2
 
+        start_time = time.time()
+
         # check project
         if project == None:
             project = self.project
@@ -467,6 +501,7 @@ class RAPABase():
         # check feature_range size
         if len(feature_range) == 0:
             raise Exception('The provided feature_range is empty.')
+        original_featurelist_size = len(starting_featurelist.features)-2 # -2 because of target feature and partitions
 
         # feature_range logic for sizes (ints) / ratios (floats)
         if np.array(feature_range).dtype.kind in np.typecodes['AllInteger']: 
@@ -478,18 +513,29 @@ class RAPABase():
             if len(feature_range_check) != len(feature_range):
                 raise Exception(f'The provided feature_range ratio values have to be: 0 < feature_range < 1')
             # convert ratios to featurelist sizes
-            original_featurelist_size = len(starting_featurelist.features)-2 # -2 because of target feature and partitions
             feature_range = [ceil(original_featurelist_size * feature_pct) for feature_pct in feature_range] # multiply by feature_pct and take ceil
             feature_range = pd.Series(feature_range).drop_duplicates() # drop duplicates
             feature_range = list(feature_range[feature_range < original_featurelist_size]) # take all values that less than the original featurelist size
             feature_range.sort(reverse=True) # sort descending
         else:
             raise TypeError('Provided \'feature_range\' is not all Int or all Float.')
+        # ---------------------------------------------------------------------------------------------
+        if verbose:
+            tqdm.write(f"---------- {starting_featurelist_name} ({original_featurelist_size}) ----------")
+        # ---------------------------------------------------------------------------------------------
 
         # ----------------------------------------------------------------------------------
-        if _config.debug_statements:
-            tqdm.write(f'{project=} {starting_featurelist=} {metric=} {feature_range=}')
+        if config.DEBUG_STATEMENTS:
+            logging.debug(f'{project=} {starting_featurelist=} {metric=} {feature_range=}')
         # ----------------------------------------------------------------------------------
+
+        # waiting for any started before rapa
+        tqdm.write(f'{starting_featurelist_name}: Waiting for previous jobs to complete...')
+        self._wait_for_jobs(project, job_type='Previous ')
+
+        # waiting for feature impact message
+        temp_start = time.time()
+        tqdm.write(f'{starting_featurelist_name}: Waiting for feature impact...')
 
         # get the models from starting featurelist
         datarobot_project_models = project.get_models()
@@ -501,11 +547,13 @@ class RAPABase():
                         model.request_feature_impact()
                     except dr.errors.JobAlreadyRequested:
                         continue
-         
+
+        # wait a bit for jobs to start
+        time.sleep(5)
+
         # TODO request_featureimpact returns a job indicator?
-        tqdm.write("waiting")
-        self._wait_for_jobs(project)
-        tqdm.write("done waiting")
+        self._wait_for_jobs(project, job_type='Feature Impact ')
+        tqdm.write(f'Feature Impact: ({time.time()-temp_start:.{config.TIME_DECIMALS}f}s)')
 
         # get feature impact/importances of original featurelist
         all_feature_importances = []
@@ -514,7 +562,7 @@ class RAPABase():
                 if model.metrics[metric]['crossValidation'] != None:
                     all_feature_importances.extend(model.get_feature_impact())
         
-        # sort by features by feature importance statistic TODO: better way to do this, dictionary w/ [median:pd.DataFrame.median()] ?
+        # sort by features by feature importance statistic 
         stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized']
         if feature_importance_metric.lower() == 'median':
             stat_feature_importances = stat_feature_importances.median().sort_values(ascending=False)
@@ -523,26 +571,18 @@ class RAPABase():
         elif feature_importance_metric.lower() == 'cumulative':
             stat_feature_importances = stat_feature_importances.sum().sort_values(ascending=False)
         else: # feature_importance_metric isn't one of the provided statistics
-            raise ValueError(f'The provided feature_importance_metric:{feature_importance_metric} is not one of the provided:{_config.feature_importance_metrics}')
+            raise ValueError(f'The provided feature_importance_metric:{feature_importance_metric} is not one of the provided:{config.feature_importance_metrics}')
 
         # retain feature performance for each round, and plot stacked bar plot of original feature performances
-        # TODO decide on coloring scheme
-        if 'feature_performance' in to_graph:
-            feature_performances = pd.DataFrame(stat_feature_importances.rename(len(stat_feature_importances)))
-            warnings.filterwarnings('ignore', message='The handle <BarContainer object of 1 artists>')
-            feature_performances.iloc[:_config.num_features_to_graph].T.set_axis(list(feature_performances.iloc[:_config.num_features_to_graph].T.columns), axis=1, inplace=False).plot(kind='bar',
-                                                                                                                                            stacked=False,
-                                                                                                                                            figsize=(_config.fig_size[0]/2, _config.fig_size[1]),
-                                                                                                                                            title=f'Top {_config.num_features_to_graph} Impact Normalized Feature Performances\nFeaturelist: {starting_featurelist_name}',
-                                                                                                                                            xlabel='Original Featurelist Length',
-                                                                                                                                            ylabel='Normalized Impact of Features',
-                                                                                                                                            colormap='tab20')
-            warnings.filterwarnings('default')
+        if to_graph and 'feature_performance' in to_graph:
+            tqdm.write('Graphing feature performance...')
+            self._feature_performances_hbar(stat_feature_importances=stat_feature_importances, featurelist_name=starting_featurelist_name)
             plt.show()
             plt.close()
 
+
         # waiting for DataRobot projects
-        self._wait_for_jobs(project)
+        self._wait_for_jobs(project, job_type='DataRobot ')
         
         # get the best performing model of this iteration
         previous_best_model = utils.get_best_model(project, metric=metric, featurelist_prefix=starting_featurelist_name)
@@ -557,10 +597,11 @@ class RAPABase():
                 tqdm.write(f'CV Mean Error Limit: {cv_average_mean_error_limit}')
 
         # perform parsimony
-        for featurelist_length in tqdm(feature_range, disable= not progress_bar):
+        pbar = tqdm(feature_range, disable = not progress_bar)
+        for featurelist_length in pbar:
             # ---------------------------------------------------------------------------------------------
             if verbose:
-                tqdm.write(f"---------- {featurelist_prefix} {featurelist_length} ----------")
+                tqdm.write(f"---------- {featurelist_prefix} ({featurelist_length}) ----------")
             # ---------------------------------------------------------------------------------------------
             try:
                 # get shortened featurelist
@@ -568,15 +609,22 @@ class RAPABase():
                 reduced_features = stat_feature_importances.head(desired_reduced_featurelist_size).index.values.tolist()
 
                 # ----- create new featurelist in datarobot -----
-                new_featurelist_name = '{} {}'.format(featurelist_prefix, len(reduced_features)) # TODO have some suffix added, move try except
+                new_featurelist_name = '{} ({})'.format(featurelist_prefix, len(reduced_features)) # TODO have some suffix added, move try except
                 reduced_featurelist = project.create_featurelist(name=new_featurelist_name, features=reduced_features)
+
+                # make the progress bar prefix
+                pbar_prefix = f'{new_featurelist_name} - '
                 
                 # ----- submit new featurelist and create models -----
-                tqdm.write('starting autopilot...')
+                pbar.set_description(f'{pbar_prefix}Starting autopilot')
+                temp_start = time.time()
                 project.start_autopilot(featurelist_id=reduced_featurelist.id, mode=mode, blend_best_models=False, prepare_model_for_deployment=False)
-                tqdm.write('waiting for autopilot...')
-                project.wait_for_autopilot(verbosity=dr.VERBOSITY_LEVEL.SILENT)
+                pbar.set_description(f'{pbar_prefix}Waiting for autopilot')
+                project.wait_for_autopilot(verbosity=dr.VERBOSITY_LEVEL.SILENT) #TODO some kind of spinning bar (threading)
+                tqdm.write(f'Autopilot: {time.time()-temp_start:.{config.TIME_DECIMALS}f}s')
 
+                temp_start = time.time()
+                pbar.set_description(f'{pbar_prefix}Waiting for feature impact')
                 datarobot_project_models = project.get_models()
                 for model in datarobot_project_models:
                     if model.featurelist_id == reduced_featurelist.id and model.metrics[metric]['crossValidation'] != None:
@@ -586,18 +634,20 @@ class RAPABase():
                             pass
 
                 # API note: Is there a project-level wait function for all jobs, regardless of AutoPilot status?
-                tqdm.write("waiting")
-                self._wait_for_jobs(project)
-                tqdm.write("done waiting")
+                self._wait_for_jobs(project, pbar=pbar, pbar_prefix=pbar_prefix, job_type='Feature Impact ')
+                tqdm.write(f'Feature Impact: {time.time()-temp_start:.{config.TIME_DECIMALS}f}s')
 
+                temp_start = time.time()
+                pbar.set_description(f'{pbar_prefix}Waiting for DataRobot')
+                all_feature_importances = []
                 while(len(all_feature_importances) == 0):
-                    all_feature_importances = []
                     for model in datarobot_project_models:
                         if model.featurelist_id == reduced_featurelist.id and model.metrics[metric]['crossValidation'] != None:
                             all_feature_importances.extend(model.get_feature_impact())
                     time.sleep(5)
+                tqdm.write(f'Waiting for DataRobot: {time.time()-temp_start:.{config.TIME_DECIMALS}f}s')
 
-                # sort by features by feature importance statistic TODO: better way to do this, dictionary w/ [median:pd.DataFrame.median()] ?
+                # sort by features by feature importance statistic 
                 stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized']
                 if feature_importance_metric.lower() == 'median':
                     stat_feature_importances = stat_feature_importances.median().sort_values(ascending=False)
@@ -606,20 +656,34 @@ class RAPABase():
                 elif feature_importance_metric.lower() == 'cumulative':
                     stat_feature_importances = stat_feature_importances.sum().sort_values(ascending=False)
                 
-                # ----- Graphing Feature Performance -----
-                if 'feature_performance' in to_graph:
-                    utils.feature_performance_stackplot(project=project,
-                                                        featurelist_prefix=featurelist_prefix,
-                                                        starting_featurelist=starting_featurelist,
-                                                        feature_importance_metric=feature_importance_metric,
-                                                        metric=metric)
-                    plt.show()
-                    plt.close()
                 
+                # ----- Graphing -----
+                if to_graph:
+                    if 'feature_performance' in to_graph:
+                        temp_start = time.time()
+                        pbar.set_description(f'{pbar_prefix}Graphing feature performance stackplot')
+                        utils.feature_performance_stackplot(project=project,
+                                                            featurelist_prefix=featurelist_prefix,
+                                                            starting_featurelist=starting_featurelist,
+                                                            feature_importance_metric=feature_importance_metric,
+                                                            metric=metric)
+                        plt.show()
+                        plt.close()
+                        print(f'Performance Stackplot: {time.time()-temp_start:.{config.TIME_DECIMALS}f}s')
+                    if 'models' in to_graph:
+                        temp_start = time.time()
+                        pbar.set_description(f'{pbar_prefix}Graphing model performance boxplots')
+                        utils.parsimony_performance_boxplot(project, 
+                                                            featurelist_prefix=featurelist_prefix)
+                        plt.show()
+                        plt.close()
+                        print(f'Model Performance Boxplot: {time.time()-temp_start:.{config.TIME_DECIMALS}f}s')
 
                 # ----- LIVES -----
                 # check for the best model (supplied metric of cv)
                 if lives != None:
+                    temp_start = time.time()
+                    pbar.set_description(f'{pbar_prefix}Checking lives')
                     if featurelist_length == feature_range[0]: # for the first time, check model scores instead of making sure the model id doesn't change (what _check_lives does)
                         current_best_model = utils.get_best_model(project, metric=metric, featurelist_prefix=featurelist_prefix)
                         previous_best_model_score = mean(previous_best_model.get_cross_validation_scores()['cvScores'][metric].values())
@@ -627,6 +691,7 @@ class RAPABase():
                         if previous_best_model_score > current_best_model_score:
                             lives -= 1
                             tqdm.write(f'Current model performance: \'{current_best_model_score}\'. Last best model performance: \'{previous_best_model_score}\'\nNo change in the best model, so a life was lost.\nLives remaining: \'{lives}\'')
+                            logging.debug(f'{current_best_model_score=}, {previous_best_model_score=}, {lives=}')
                             previous_best_model = current_best_model
                     else: # get the best model and check their id
                         lives, previous_best_model = self._check_lives(lives=lives, 
@@ -635,6 +700,7 @@ class RAPABase():
                                                                         featurelist_prefix=featurelist_prefix, 
                                                                         metric=metric,
                                                                         verbose=True)
+                    tqdm.write(f'Checking lives: {time.time()-temp_start:.{config.TIME_DECIMALS}f}s')
                     if lives < 0:
                         current_best_model_score = mean(previous_best_model.get_cross_validation_scores()['cvScores'][metric].values())
                         tqdm.write(f'Ran out of lives.\nBest model: \'{previous_best_model}\'\nAccuracy ({metric}):\'{current_best_model_score}\'')
@@ -649,13 +715,17 @@ class RAPABase():
                 # for the current featurelist, check the cv metric for all models and get the standard deviation of the metric among the cv folds for each model.
                 # Then, take the average of those standard deviation values and check that it is below the cv_average_mean_error_limit
                 if cv_average_mean_error_limit != None:
+                    temp_start = time.time()
+                    pbar.set_description(f'{pbar_prefix}Checking mean error limit')
                     cv_metrics_dict = {}
                     for model in datarobot_project_models:
                         if model.featurelist_id == reduced_featurelist.id and model.metrics[metric]['crossValidation'] != None:
                             cv_metrics_dict[model] = stdev(model.get_cross_validation_scores()['cvScores'][metric].values())
                     error_from_mean = mean(cv_metrics_dict.values())
+                    print(f'Mean Error Limit: {time.time()-temp_start:.{config.TIME_DECIMALS}f}s')
                     if error_from_mean > cv_average_mean_error_limit:
                         tqdm.write(f'Error from the mean over the limit! Stopping parsimony analysis.\nError from the mean: \'{error_from_mean}\'\nLimit set: \'{cv_average_mean_error_limit}\'')
+                        logging.debug(f'{error_from_mean=}, {cv_average_mean_error_limit=}')
                         break
                     # ----------------------------------------------------------------------------------
                     if verbose:
@@ -667,3 +737,7 @@ class RAPABase():
                     pass
                 else:
                     raise e
+        temp_start = time.time()
+        pbar.set_description(f'Graphing final feature performances')
+        self._feature_performances_hbar(stat_feature_importances=stat_feature_importances, featurelist_name=new_featurelist_name)
+        tqdm.write(f'Finished Parsimony Analysis in {time.time()-start_time:.{config.TIME_DECIMALS}f}s.')
