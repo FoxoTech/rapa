@@ -1,3 +1,5 @@
+from . import config
+
 import datarobot as dr
 from datarobot.errors import ClientError
 
@@ -6,9 +8,14 @@ import pickle
 import logging
 from warnings import warn
 from warnings import catch_warnings
+from datarobot.models import featurelist
 
 import pandas as pd
+import numpy as np
 from statistics import mean
+from statistics import median
+
+import string
 
 from collections import defaultdict
 import matplotlib.pyplot as plt
@@ -56,7 +63,7 @@ def find_project(project: str) -> dr.Project:
 
 # if changing get_best_model, check if it's alias get_starred_model needs changing
 def get_best_model(project: dr.Project, 
-                prefix: str = None, 
+                featurelist_prefix: str = None, 
                 starred: bool = False, 
                 metric: str = 'AUC') -> dr.Model:
     """Attempts to find the 'best' model in a datarobot by searching cross validation scores of all the
@@ -77,6 +84,10 @@ def get_best_model(project: dr.Project,
     project: datarobot.Project
         The project object that will be searched for the 'best' model
 
+    featurelist_prefix: str, optional (default = 'RAPA Reduced to')
+        The desired featurelist prefix used to search in for models using specific
+        rapa featurelists
+
     starred: bool, optional (default = False)
         If True, return the starred model. If there are more than one starred models,
         then warn the user and return the 'best' one
@@ -91,7 +102,17 @@ def get_best_model(project: dr.Project,
         from the provided datarobot project
     """
 
-    all_models = project.get_models() # Retrieve all models from the supplied project
+    all_models = []
+    if featurelist_prefix: # if featurelist_prefix is not none or empty
+        for model in project.get_models():
+            if model.featurelist_name != None:
+                if model.featurelist_name.lower().startswith(featurelist_prefix.lower()):
+                    all_models.append(model)
+    else:
+        all_models = project.get_models() # Retrieve all models from the supplied project
+    
+    if len(all_models) == 0:
+        return None
 
     if starred: # if the model is starred logic
         starred_models = []
@@ -103,7 +124,6 @@ def get_best_model(project: dr.Project,
         elif len(starred_models) == 1: # if there is a starred model, return it regardless of whether or not it has been cross-validated
             return starred_models[0]
         else: # more than one model is starred
-            warn(f'More than one model is starred: {starred_models}. Will try to return the \'best\' of these models.')
             averages = {} # keys are average scores and values are the models
             num_no_cv = 0
             for starred_model in starred_models:
@@ -117,8 +137,6 @@ def get_best_model(project: dr.Project,
             else:
                 return averages[sorted(averages.keys())[-1]] # highest metric is 'best' TODO: support the other metrics
     else: # starred == False
-        if len(all_models) > 20: # arbitrarily chosen
-            warn(f'There are \'{len(all_models)}\'. Keep in mind it may take a while to obtain each CV score (~1 second per model).') # TODO: make it faster
         averages = {} # keys are average scores and values are the models
         num_no_cv = 0
         for model in all_models:
@@ -126,18 +144,20 @@ def get_best_model(project: dr.Project,
                 averages[mean(model.get_cross_validation_scores()['cvScores'][metric].values())] = model
             except ClientError: # the model wasn't cross-validated
                 num_no_cv += 1
-            if len(averages) == 0:
-                warn(f'There were no cross-validated models in \'{project=}\'')
-                return None
-            else:
-                return averages[sorted(averages.keys())[-1]] # highest metric is 'best' TODO: support the other metrics
+
+        if len(averages) == 0:
+            warn(f'There were no cross-validated models in \'{project=}\'')
+            return None
+        else:
+            return averages[sorted(averages.keys())[-1]] # highest metric is 'best' TODO: support the other metrics
 
 # alias for get_best_model
 def get_starred_model(project: dr.Project, 
-                    metric: str = 'AUC') -> dr.Model:
+                    metric: str = 'AUC',
+                    featurelist_prefix: str = None) -> dr.Model:
     """Alias for rapa.utils.get_best_model() but makes starred = True
     """
-    return get_best_model(project, starred = True, metric = metric)
+    return get_best_model(project, starred = True, metric = metric, featurelist_prefix = featurelist_prefix)
 
 
 def initialize_dr_api(token_key, 
@@ -223,7 +243,8 @@ def get_featurelist(featurelist: str,
 def parsimony_performance_boxplot(project: dr.Project, 
                                 featurelist_prefix: str = 'RAPA Reduced to',
                                 metric: str = 'AUC',
-                                split: str = 'crossValidation'):
+                                split: str = 'crossValidation',
+                                featurelist_lengths: list = None):
     """Uses `seaborn`'s `boxplot` function to plot featurelist size vs performance
     for all models that use that featurelist. # TODO warn about multiple prefixes, try to use new prefixes
 
@@ -237,31 +258,165 @@ def parsimony_performance_boxplot(project: dr.Project,
         will start with the prefix, include a space, and then end with the number of features in that featurelist
 
     metric: str, optional (default = 'AUC')
-        TODO: fill out
+        The metric used for plotting accuracy of models
 
     split: str, optional (default = 'crossValidation')
         What split's performance to take from. 
         Can be: ['crossValidation', 'holdout'] TODO: i think it can be more, double check
+    
+    featurelist_lengths: list, optional (default = None)
+        A list of featurelist lengths to plot
 
     ## Returns
     ----------
-    TODO: what does a matplotlib.pyplot plot return? should i even return a plot?
+    None TODO: return plot?
     """
+    # if `project` is a string, find the project
+    if type(project) is str:
+        project = find_project(project)
+
     datarobot_project_models = project.get_models() # get all the models in the provided project
     RAPA_model_featurelists = []
     featurelist_performances = defaultdict(list)
     for model in datarobot_project_models: # for every model, if the model has the prefix, then add it's performance
-        if featurelist_prefix not in model.featurelist_name:
-            continue
-        RAPA_model_featurelists.append(model.featurelist_name)
-        num_features = int(model.featurelist_name.split(' ')[-1]) # parse the number of features from the featurelist name
-        featurelist_performances[num_features].append(model.metrics[metric][split])
+        if model.featurelist_name != None and featurelist_prefix in model.featurelist_name:
+            RAPA_model_featurelists.append(model.featurelist_name)
+            num_features = int(model.featurelist_name.split(' ')[-1].strip('()')) # parse the number of features from the featurelist name
+            if featurelist_lengths and num_features in featurelist_lengths:
+                featurelist_performances[num_features].append(model.metrics[metric][split])
+            elif not featurelist_lengths:
+                featurelist_performances[num_features].append(model.metrics[metric][split])
 
-    featurelist_performances_df = pd.DataFrame(featurelist_performances)[sorted(featurelist_performances.keys())]
-    featurelist_performances_df = featurelist_performances_df.dropna(how="all", axis=1).dropna()
-
+    featurelist_performances_df = pd.DataFrame(featurelist_performances)[sorted(featurelist_performances.keys())[::-1]]
+    
     with plt.style.context('tableau-colorblind10'):
-        sb.boxplot(data=featurelist_performances_df)
         plt.ylabel(f'{split} {metric}')
         plt.xlabel('Number of Features')
-        return(plt.show())
+        plt.title(f'{project.project_name} - {featurelist_prefix}\nParsimonious Model Performance')
+        sb.boxplot(data=featurelist_performances_df)
+    return featurelist_performances_df
+    
+def feature_performance_stackplot(project: dr.Project, 
+                                featurelist_prefix: str = 'RAPA Reduced to',
+                                starting_featurelist: str = None,
+                                feature_importance_metric: str = 'median',
+                                metric: str = 'AUC',
+                                vlines: bool = False):
+    """Utilizes `matplotlib.pyplot.stackplot` to show feature performance during 
+    parsimony analysis.
+
+    ## Parameters
+    ----------
+    project: datarobot.Project
+        Either a datarobot project, or a string of it's id or name
+
+    featurelist_prefix: str, optional (default = 'RAPA Reduced to')
+        The desired prefix for the featurelists that will be used for plotting feature performance. Each featurelist
+        will start with the prefix, include a space, and then end with the number of features in that featurelist
+
+    starting_featurelist: str, optional (default = None)
+        The starting featurelist used for parsimony analysis. If None, only
+        the featurelists with the desired prefix in `featurelist_prefix` will be plotted
+    
+    feature_importance_metric: str, optional (default = mean)
+        Which metric to use when finding the  most representative feature importance of all models in the featurelist
+            Options: 'median', 'mean', or 'cumulative'
+
+    metric: str, optional (default = 'AUC')
+        Which metric to use when finding feature importance of each model
+    
+    vlines: bool, optional (default = False)
+        Whether to add vertical lines at the featurelist lengths or not, False by default
+
+    ## Returns
+    ----------
+    None TODO: return plot?
+    """
+    # if `project` is a string, find the project
+    if type(project) is str:
+        project = find_project(project)
+    
+    if type(starting_featurelist) == str:
+        starting_featurelist = get_featurelist(starting_featurelist, project)
+    
+    datarobot_project_models = project.get_models() # get all the models in the provided project
+
+    if starting_featurelist != None: # have the starting featurelist as well
+        all_feature_importances = {}
+        for model in datarobot_project_models:
+            if model.featurelist_name != None and (model.featurelist_name.startswith(featurelist_prefix) or model.featurelist_id == starting_featurelist.id): # if the model uses the starting featurelist/featurelist prefix
+                if model.metrics[metric]['crossValidation'] != None:
+                    if model.featurelist_name in all_feature_importances.keys():
+                        for x in model.get_feature_impact():
+                            if x['featureName'] in all_feature_importances[model.featurelist_name].keys():
+                                all_feature_importances[model.featurelist_name][x['featureName']].append(x['impactNormalized'])
+                            else:
+                                all_feature_importances[model.featurelist_name][x['featureName']] = [x['impactNormalized']]
+                    else:
+                        all_feature_importances[model.featurelist_name] = {} 
+                        for x in model.get_feature_impact():
+                            all_feature_importances[model.featurelist_name][x['featureName']] = [x['impactNormalized']]
+    else: # same as if, but without starting featurelist 
+        all_feature_importances = {}
+        for model in datarobot_project_models:
+            if model.featurelist_name.startswith(featurelist_prefix): # if the model's featurelist starts with the featurelist prefix
+                if model.metrics[metric]['crossValidation'] != None:
+                    if model.featurelist_name in all_feature_importances.keys():
+                        for x in model.get_feature_impact():
+                            if x['featureName'] in all_feature_importances[model.featurelist_name].keys():
+                                all_feature_importances[model.featurelist_name][x['featureName']].append(x['impactNormalized'])
+                            else:
+                                all_feature_importances[model.featurelist_name][x['featureName']] = [x['impactNormalized']]
+                    else:
+                        all_feature_importances[model.featurelist_name] = {} 
+                        for x in model.get_feature_impact():
+                            all_feature_importances[model.featurelist_name][x['featureName']] = [x['impactNormalized']]
+
+    for featurelist_name in all_feature_importances.keys():
+        for feature in all_feature_importances[featurelist_name].keys():
+            if feature_importance_metric.lower() == 'median':
+                all_feature_importances[featurelist_name][feature] = median(all_feature_importances[featurelist_name][feature])
+            elif feature_importance_metric.lower() == 'mean':
+                all_feature_importances[featurelist_name][feature] = mean(all_feature_importances[featurelist_name][feature])
+            elif feature_importance_metric.lower() == 'cumulative':
+                all_feature_importances[featurelist_name][feature] = sum(all_feature_importances[featurelist_name][feature])
+            else:
+                raise Exception(f'`feature_importance_metric` provided ({feature_importance_metric}) not accepted.\nOptions: \'median\', \'mean\', or \'cumulative\'')
+
+    # create 1d array of dimension N (x), and 2d array of dimension MxN (y) for stackplot
+    df = pd.DataFrame(all_feature_importances).replace({np.nan: 0})
+    if starting_featurelist != None: # rename starting_featurelist column to have the number of features
+        df = df.rename(columns={starting_featurelist.name: f'{starting_featurelist.name} {len(starting_featurelist.features)}'})
+    df = df/df.sum()
+    cols = [(int(x.split(' ')[-1].strip('()')), x) for x in list(df.columns)] # get a list of tuples where (# of features, column name)
+    cols = sorted(cols)[::-1] # sorted descending by first object in tuple (featurelist size)
+    x = []
+    y = []
+    for col in cols:
+        x.append(str(col[0]))
+        y.append(list(df[col[1]]))
+    y = np.array(y)
+    y = y.T
+    
+    len_smallest_featurelist = min([int(x.split(' ')[-1].strip('()')) for x in df.columns])
+    smallest_featurelist = featurelist_prefix + ' (' + str(len_smallest_featurelist) + ')'
+
+    # unreadable list comprehension really means: get a dictionary with keys that are the old column names (features), and values with new column names (starting with underscore)
+    # at least show config.MIN_FEATURES_TO_GRAPH
+    # this is so that the underscored names are not shown in the legend.
+    labels = [{x:'_' + str(x)} if i > config.NUM_FEATURES_TO_GRAPH or i >= min([int(x.split(' ')[-1].strip('()')) for x in df.columns]) else {x:x} for i, x in enumerate(df.loc[:,smallest_featurelist].sort_values(ascending=False).index)]
+    l = {}
+    for label in labels:
+        l.update(label)
+
+    df = df.rename(index=l)
+    _, ax = plt.subplots(figsize=(config.FIG_SIZE[0], config.FIG_SIZE[1]/2))
+    plt.xlabel('Feature List Length')
+    plt.ylabel('Normalized Feature Impact\n(Normalized Impact Normalized)')
+    plt.title(f'{project.project_name} - {featurelist_prefix}\nFeature Impact Stackplot')
+    if vlines:
+        plt.vlines([z for z in range(1,len(x)-1)], ymin=0, ymax=1, linestyles='dashed')
+    ax.stackplot(x, y, labels=list(df.index), colors=plt.cm.tab20.colors)
+    ax.legend(loc='upper left')
+    return None
+
