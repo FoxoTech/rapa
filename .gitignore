@@ -130,4 +130,3 @@ dmypy.json
 
 data/*
 .DS_Store
-notebook_test.ipynb
