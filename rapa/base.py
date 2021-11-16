@@ -1,5 +1,6 @@
 from . import utils
 from . import config
+from . import _var
 
 import time
 
@@ -158,14 +159,14 @@ class RAPABase():
                 tqdm.write(f'Lives left: \'{lives}\'')
         return (lives, current_best_model)
     
-    @staticmethod #TODO FIX THIS SO IT WORKS WITH THE LAST FEATURELIST
-    def _feature_performances_hbar(stat_feature_importances, featurelist_name, stacked=False, colormap='tab20'):
+    @staticmethod 
+    def _feature_performances_hbar(stat_feature_importances, featurelist_name, metric='', stacked=False, colormap='tab20'):
         feature_performances = pd.DataFrame(stat_feature_importances.rename(len(stat_feature_importances)))
         warnings.filterwarnings('ignore', message='The handle <BarContainer object of 1 artists>')
         ax = feature_performances.iloc[:config.NUM_FEATURES_TO_GRAPH].T.set_axis(list(feature_performances.iloc[:config.NUM_FEATURES_TO_GRAPH].T.columns), axis=1, inplace=False).plot(kind='barh',
                                                                                                                                             stacked=stacked,
                                                                                                                                             figsize=(config.FIG_SIZE[0], config.FIG_SIZE[1]/2),
-                                                                                                                                            title=f'{min([config.NUM_FEATURES_TO_GRAPH, len(feature_performances)])} Impact Normalized Feature Performances\nFeaturelist: {featurelist_name}',
+                                                                                                                                            title=f'{min([config.NUM_FEATURES_TO_GRAPH, len(feature_performances)])} {metric} Impact Normalized Feature Performances\nFeaturelist: {featurelist_name}',
                                                                                                                                             xlabel='Featurelist Length',
                                                                                                                                             ylabel='Normalized Impact of Features',
                                                                                                                                             colormap=colormap)
@@ -390,13 +391,16 @@ class RAPABase():
                         mode: str = dr.AUTOPILOT_MODE.FULL_AUTO,
                         lives: int = None,
                         cv_average_mean_error_limit: float = None,
-                        feature_importance_metric: str = 'median',
+                        feature_impact_metric: str = 'median',
                         progress_bar: bool = True, 
                         to_graph: List[str] = None, 
                         metric: str = None,
                         verbose: bool = True):
         """Performs parsimony analysis by repetatively extracting feature importance from 
         DataRobot models and creating new models with reduced features (smaller feature lists). # TODO take a look at featurelist_prefix for running multiple RAPA
+
+        NOTICE: Feature impact scores are only gathered from models that have had their 
+        **cross-validation accuracy** tested!
 
         Parameters:
         ----------
@@ -445,7 +449,7 @@ class RAPABase():
             the mean of these is 0.7. The average error is += 0.15. If 0.15 >= cv_mean_error_limit,
             the training stops.
         
-        feature_importance_metric: str, optional (default = 'median')
+        feature_impact_metric: str, optional (default = 'median')
             How RAPA will decide each feature's importance over every model in a feature list
                 Options: 'median', 'mean', or 'cumulative'
 
@@ -564,19 +568,19 @@ class RAPABase():
         
         # sort by features by feature importance statistic 
         stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized']
-        if feature_importance_metric.lower() == 'median':
+        if feature_impact_metric.lower() == 'median':
             stat_feature_importances = stat_feature_importances.median().sort_values(ascending=False)
-        elif feature_importance_metric.lower() == 'mean':
+        elif feature_impact_metric.lower() == 'mean':
             stat_feature_importances = stat_feature_importances.mean().sort_values(ascending=False)
-        elif feature_importance_metric.lower() == 'cumulative':
+        elif feature_impact_metric.lower() == 'cumulative':
             stat_feature_importances = stat_feature_importances.sum().sort_values(ascending=False)
-        else: # feature_importance_metric isn't one of the provided statistics
-            raise ValueError(f'The provided feature_importance_metric:{feature_importance_metric} is not one of the provided:{config.feature_importance_metrics}')
+        else: # feature_impact_metric isn't one of the provided statistics
+            raise ValueError(f'The provided feature_impact_metric:{feature_impact_metric} is not one of the provided:{_var.FEATURE_IMPACT_STATISTICS}')
 
         # retain feature performance for each round, and plot stacked bar plot of original feature performances
         if to_graph and 'feature_performance' in to_graph:
             tqdm.write('Graphing feature performance...')
-            self._feature_performances_hbar(stat_feature_importances=stat_feature_importances, featurelist_name=starting_featurelist_name)
+            self._feature_performances_hbar(stat_feature_importances=stat_feature_importances, featurelist_name=starting_featurelist_name, metric=feature_impact_metric)
             plt.show()
             plt.close()
 
@@ -590,7 +594,7 @@ class RAPABase():
         
         tqdm.write(f'Project: {project.project_name} | Featurelist Prefix: {featurelist_prefix} | Feature Range: {feature_range}')
         if verbose:
-            tqdm.write(f'Feature Importance Metric: {feature_importance_metric} | Model Performance Metric: {metric}')
+            tqdm.write(f'Feature Importance Metric: {feature_impact_metric} | Model Performance Metric: {metric}')
             if lives:
                 tqdm.write(f'Lives: {lives}')
             if cv_average_mean_error_limit:
@@ -649,11 +653,11 @@ class RAPABase():
 
                 # sort by features by feature importance statistic 
                 stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized']
-                if feature_importance_metric.lower() == 'median':
+                if feature_impact_metric.lower() == 'median':
                     stat_feature_importances = stat_feature_importances.median().sort_values(ascending=False)
-                elif feature_importance_metric.lower() == 'mean':
+                elif feature_impact_metric.lower() == 'mean':
                     stat_feature_importances = stat_feature_importances.mean().sort_values(ascending=False)
-                elif feature_importance_metric.lower() == 'cumulative':
+                elif feature_impact_metric.lower() == 'cumulative':
                     stat_feature_importances = stat_feature_importances.sum().sort_values(ascending=False)
                 
                 
@@ -665,7 +669,7 @@ class RAPABase():
                         utils.feature_performance_stackplot(project=project,
                                                             featurelist_prefix=featurelist_prefix,
                                                             starting_featurelist=starting_featurelist,
-                                                            feature_importance_metric=feature_importance_metric,
+                                                            feature_impact_metric=feature_impact_metric,
                                                             metric=metric)
                         plt.show()
                         plt.close()
@@ -739,5 +743,5 @@ class RAPABase():
                     raise e
         temp_start = time.time()
         pbar.set_description(f'Graphing final feature performances')
-        self._feature_performances_hbar(stat_feature_importances=stat_feature_importances, featurelist_name=new_featurelist_name)
+        self._feature_performances_hbar(stat_feature_importances=stat_feature_importances, featurelist_name=new_featurelist_name, metric=feature_impact_metric)
         tqdm.write(f'Finished Parsimony Analysis in {time.time()-start_time:.{config.TIME_DECIMALS}f}s.')

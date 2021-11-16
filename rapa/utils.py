@@ -282,11 +282,22 @@ def parsimony_performance_boxplot(project: dr.Project,
         if model.featurelist_name != None and featurelist_prefix in model.featurelist_name:
             RAPA_model_featurelists.append(model.featurelist_name)
             num_features = int(model.featurelist_name.split(' ')[-1].strip('()')) # parse the number of features from the featurelist name
-            if featurelist_lengths and num_features in featurelist_lengths:
-                featurelist_performances[num_features].append(model.metrics[metric][split])
-            elif not featurelist_lengths:
-                featurelist_performances[num_features].append(model.metrics[metric][split])
-
+            if model.metrics[metric][split] != None: # if there is no feature impact for the model/split, don't add the metric
+                if featurelist_lengths and num_features in featurelist_lengths:
+                    featurelist_performances[num_features].append(model.metrics[metric][split])
+                elif not featurelist_lengths:
+                    featurelist_performances[num_features].append(model.metrics[metric][split])
+    
+    # Add Nones so that the arrays are the same length
+    last = 0
+    for key in featurelist_performances:
+        m = max(last, len(featurelist_performances[key]))
+        last = m
+    for key in featurelist_performances:
+        temp_len = len(featurelist_performances[key])
+        for _ in range(m-temp_len):
+            featurelist_performances[key].append(None)
+    
     featurelist_performances_df = pd.DataFrame(featurelist_performances)[sorted(featurelist_performances.keys())[::-1]]
     
     with plt.style.context('tableau-colorblind10'):
@@ -299,7 +310,7 @@ def parsimony_performance_boxplot(project: dr.Project,
 def feature_performance_stackplot(project: dr.Project, 
                                 featurelist_prefix: str = 'RAPA Reduced to',
                                 starting_featurelist: str = None,
-                                feature_importance_metric: str = 'median',
+                                feature_impact_metric: str = 'median',
                                 metric: str = 'AUC',
                                 vlines: bool = False):
     """Utilizes `matplotlib.pyplot.stackplot` to show feature performance during 
@@ -318,7 +329,7 @@ def feature_performance_stackplot(project: dr.Project,
         The starting featurelist used for parsimony analysis. If None, only
         the featurelists with the desired prefix in `featurelist_prefix` will be plotted
     
-    feature_importance_metric: str, optional (default = mean)
+    feature_impact_metric: str, optional (default = mean)
         Which metric to use when finding the  most representative feature importance of all models in the featurelist
             Options: 'median', 'mean', or 'cumulative'
 
@@ -374,14 +385,14 @@ def feature_performance_stackplot(project: dr.Project,
 
     for featurelist_name in all_feature_importances.keys():
         for feature in all_feature_importances[featurelist_name].keys():
-            if feature_importance_metric.lower() == 'median':
+            if feature_impact_metric.lower() == 'median':
                 all_feature_importances[featurelist_name][feature] = median(all_feature_importances[featurelist_name][feature])
-            elif feature_importance_metric.lower() == 'mean':
+            elif feature_impact_metric.lower() == 'mean':
                 all_feature_importances[featurelist_name][feature] = mean(all_feature_importances[featurelist_name][feature])
-            elif feature_importance_metric.lower() == 'cumulative':
+            elif feature_impact_metric.lower() == 'cumulative':
                 all_feature_importances[featurelist_name][feature] = sum(all_feature_importances[featurelist_name][feature])
             else:
-                raise Exception(f'`feature_importance_metric` provided ({feature_importance_metric}) not accepted.\nOptions: \'median\', \'mean\', or \'cumulative\'')
+                raise Exception(f'`feature_impact_metric` provided ({feature_impact_metric}) not accepted.\nOptions: \'median\', \'mean\', or \'cumulative\'')
 
     # create 1d array of dimension N (x), and 2d array of dimension MxN (y) for stackplot
     df = pd.DataFrame(all_feature_importances).replace({np.nan: 0})
