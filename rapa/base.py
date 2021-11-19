@@ -207,6 +207,10 @@ class RAPABase():
             will be retained as a holdout split, so by default this function
             sets up the dataset for 5-fold cross-validation with a holdout.
 
+        knn_impute: bool, optional (default: False)
+            The option to perform kNN imputation before feature selection. This uses 2 
+            neighbors, distance as weights, and euclidian distance. 
+
         filter_function: callable, optional (default: None)
             The function used to calculate the importance of each feature in
             the initial filtering step that reduces the feature set down to
