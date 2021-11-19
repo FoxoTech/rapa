@@ -6,6 +6,7 @@ import time
 from sklearn.feature_selection import f_regression, f_classif
 from sklearn.model_selection import StratifiedKFold, KFold
 from sklearn.utils import check_array
+from sklearn.impute import KNNImputer
 
 from typing import List
 from typing import Callable
@@ -179,6 +180,7 @@ class RAPABase():
                                     target_name: str, 
                                     n_features: int = 19990,
                                     n_splits: int = 6, 
+                                    knn_impute: bool = False,
                                     filter_function: Callable[[pd.DataFrame, np.ndarray], List[np.ndarray]] = None,
                                     random_state: int = None) -> pd.DataFrame: #TODO: change return type
         """Prepares the input data for submission as either a regression or classification problem on DataRobot.
@@ -248,6 +250,15 @@ class RAPABase():
             feature_filter = False
         else:
             feature_filter = True
+
+        #Impute with kNN if knn_impute=True
+        if knn_impute and input_data_df.isna().sum().sum() > 0: #checks if use wants to impute NaNs and if there are NaNs in dataframe
+            imputer = KNNImputer(n_neighbors=2, weights='distance')
+            #if kNN imputation errors, there may be columns with all NaNs. 
+            #Maybe add something to remove columns with all NaNs
+            input_data_df = pd.DataFrame(imputer.fit_transform(input_data_df), columns=input_data_df.columns, index=input_data_df.index)
+
+
 
         # Set target_type, kfold_type, and filter_function based on type of classification/regression problem
         if self._classification:
