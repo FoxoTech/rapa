@@ -1,1 +1,1 @@
-FEATURE_IMPORTANCE_STATISTICS = ['median', 'mean', 'cumulative'] # avoid putting global variables
+FEATURE_IMPACT_STATISTICS = ['median', 'mean', 'cumulative'] # avoid putting global variables
