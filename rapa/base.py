@@ -2,6 +2,8 @@ from . import utils
 from . import config
 
 import time
+import sys
+import threading
 
 from sklearn.feature_selection import f_regression, f_classif
 from sklearn.model_selection import StratifiedKFold, KFold
@@ -180,9 +182,10 @@ class RAPABase():
                                     target_name: str, 
                                     n_features: int = 19990,
                                     n_splits: int = 6, 
-                                    knn_impute: bool = False,
+                                    impute: bool = False,
                                     filter_function: Callable[[pd.DataFrame, np.ndarray], List[np.ndarray]] = None,
-                                    random_state: int = None) -> pd.DataFrame: #TODO: change return type
+                                    random_state: int = None,
+                                    **kwargs) -> pd.DataFrame: #TODO: change return type
         """Prepares the input data for submission as either a regression or classification problem on DataRobot.
 
         Creates pre-determined k-fold cross-validation splits and filters the feature
@@ -207,9 +210,9 @@ class RAPABase():
             will be retained as a holdout split, so by default this function
             sets up the dataset for 5-fold cross-validation with a holdout.
 
-        knn_impute: bool, optional (default: False)
-            The option to perform kNN imputation before feature selection. This uses 2 
-            neighbors, distance as weights, and euclidian distance. 
+        impute: bool, optional (default: False)
+            The option to perform imputation before ANOVA F for feature selection.
+            If changed to True, the user must specify which imputation method in **kwargs. 
 
         filter_function: callable, optional (default: None)
             The function used to calculate the importance of each feature in
@@ -231,6 +234,25 @@ class RAPABase():
             The random number generator seed for RAPA. Use this parameter to make sure
             that RAPA will give you the same results each time you run it on the
             same input data set with that seed.
+
+        **kwargs: 
+                imputation_method: str, optional (default: None)
+                    When choosing to impute, user must select an imputation method. Supported
+                    imputation methods are 'knn', 'mean', 'median', '0'. 
+
+                n_neighbors: int, optional (defualt: 2)
+                    When choosing kNN imputation, the user has an option to select k neighbors.
+
+                weighted: bool, optional (default: True)
+                    When choosing kNN imputation, the user has an option to use weighted distances.
+                
+                distance: str, optional (default: euclidean)
+                    When choosing kNN imputation, the user has the option to select the disatance metric.
+                    The choices are 'euclidean', 'manhattan'.
+
+                keep_nans: bool, optional (default: False)
+                    When imputing, this option allows the user to keep the imputed values when returning 
+                    the submittable dataframe. While this seems desireable, 
 
         Returns
         ----------
@@ -256,10 +278,18 @@ class RAPABase():
             feature_filter = True
 
         #Impute with kNN if knn_impute=True
-        if knn_impute and input_data_df.isna().sum().sum() > 0: #checks if use wants to impute NaNs and if there are NaNs in dataframe
-            imputer = KNNImputer(n_neighbors=2, weights='distance')
-            #if kNN imputation errors, there may be columns with all NaNs. 
-            #Maybe add something to remove columns with all NaNs
+        if impute and input_data_df.isna().sum().sum() > 0: #checks if use wants to impute NaNs and if there are NaNs in dataframe
+            final_betas = input_data_df
+
+            if 'imputation_method' in kwargs and kwargs['imputation_method'] == 'knn':
+                if 'n_neighbors' in kwargs:
+                    k = kwargs['n_neighbors']
+                else: 
+                    k = 2
+                imputer = KNNImputer(n_neighbors=k, weights='distance')
+                #if kNN imputation errors, there may be columns with all NaNs. 
+                #Maybe add something to remove columns with all NaNs
+
             input_data_df = pd.DataFrame(imputer.fit_transform(input_data_df), columns=input_data_df.columns, index=input_data_df.index)
 
 
@@ -315,6 +345,10 @@ class RAPABase():
             # put target_name, partition, and most correlated features columns in dr_upload_df
             datarobot_upload_df = input_data_df[[target_name, 'partition'] + only_features_df.columns.values.tolist()]
 
+        if impute:
+            if 'keep_nans' in kwargs and not kwargs['keep_nans']:
+                df = final_betas.T[final_betas.columns.isin(datarobot_upload_df.columns)].T
+                datarobot_upload_df = df.merge(datarobot_upload_df[[target_name, 'partition']], left_index=True, right_index=True)
         return datarobot_upload_df
 
 
@@ -480,6 +514,15 @@ class RAPABase():
             When None, the metric is determined by what class inherits from base. For instance,
             a `RAPAClassif` instance's default is 'AUC', and `RAPARegress` is 'R Squared'
         """ 
+        def spin_cursor():    
+            while True:        
+                for cursor in '|/-\\':
+                    sys.stdout.write(cursor)
+                    sys.stdout.flush()
+                    time.sleep(0.15) # adjust this to change the speed
+                    sys.stdout.write('\b')
+                    if done:
+                        return
         # TODO: return a dictionary of values? {"time_taken": 2123, "cv_mean_error": list[floats], ""}
         # TODO: graph cv performance boxplots
         # TODO: graph pareto front of median model performance vs feature list size
@@ -635,7 +678,16 @@ class RAPABase():
                 temp_start = time.time()
                 project.start_autopilot(featurelist_id=reduced_featurelist.id, mode=mode, blend_best_models=False, prepare_model_for_deployment=False)
                 pbar.set_description(f'{pbar_prefix}Waiting for autopilot')
+
+                done = False                
+                spin_thread = threading.Thread(target=spin_cursor)
+                spin_thread.start()
+
                 project.wait_for_autopilot(verbosity=dr.VERBOSITY_LEVEL.SILENT) #TODO some kind of spinning bar (threading)
+
+                done = True
+                spin_thread.join()
+                
                 tqdm.write(f'Autopilot: {time.time()-temp_start:.{config.TIME_DECIMALS}f}s')
 
                 temp_start = time.time()
