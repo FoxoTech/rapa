@@ -1,12 +1,9 @@
 from setuptools import find_packages, setup
-exec(open('rapa/_version.py').read())
 
-
-
+exec(open('rapa/version.py').read())
 
 setup(
     name='rapa',
-    packages=find_packages(),
     version=__version__,
     description='Robust Automtated Parsimony Analysis',
     long_description=open('README.md').read(),
@@ -42,7 +39,6 @@ setup(
     tests_require=['pytest'],
     test_suite='tests',
     url='https://github.com/FoxoTech/rapa',
-    package_dir={"": "rapa"},
-    packages=find_packages(where="rapa"),
+    packages=find_packages(),
     python_requires=">=3.6",
 )
