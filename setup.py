@@ -7,6 +7,7 @@ setup(
     version=__version__,
     description='Robust Automtated Parsimony Analysis',
     long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',
     author='Life Epigenetics',
     author_email='info@FOXOBioScience.com',
     license='MIT',
@@ -27,12 +28,11 @@ setup(
     keywords='feature reduction features datarobot robust automated parsimony analysis',
     install_requires=[
         'numpy',
-        'pandas >=1.3.0',
+        'pandas',
         'scikit-learn',
         'matplotlib',
         'datarobot',
         'tqdm',
-        'pickle',
         'seaborn',
     ],
     setup_requires=['pytest-runner'],
@@ -40,5 +40,5 @@ setup(
     test_suite='tests',
     url='https://github.com/FoxoTech/rapa',
     packages=find_packages(),
-    python_requires=">=3.6",
+    python_requires=">=3.8",
 )
