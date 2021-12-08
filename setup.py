@@ -36,7 +36,7 @@ setup(
         'datarobot',
         'tqdm',
         'pickle',
-        'seaborn'
+        'seaborn',
     ],
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
