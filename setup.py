@@ -42,4 +42,7 @@ setup(
     tests_require=['pytest'],
     test_suite='tests',
     url='https://github.com/FoxoTech/rapa',
+    package_dir={"": "rapa"},
+    packages=find_packages(where="rapa"),
+    python_requires=">=3.6",
 )
