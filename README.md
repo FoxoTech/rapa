@@ -10,4 +10,5 @@ RAPA will initially be developed on top of DataRobot's Python API to use DataRob
 
 Although the MVP implementation of these features will be based on basic techniques such as linear feature filters and recursive feature elimination, we plan to rapidly improve these features by integrating state-of-the-art techniques from the academic literature.
 
-The RAPA MVP is currently being demonstrated in [01-demo-rapa.ipynb](https://github.com/FoxoTech/rapa/blob/main/01-demo-rapa.ipynb). In the near future, we will transition this project from a demo to a functioning Python module.
+
+The RAPA MVP is currently being demonstrated in [demo-rapa.ipynb](https://github.com/FoxoTech/rapa/blob/main/tutorials/02-tutorial.ipynb). In the near future, we will transition this project from a demo to a functioning Python module.
