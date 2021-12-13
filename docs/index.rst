@@ -10,6 +10,7 @@ Welcome to rapa's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   sources/modules
 
 
 Indices and tables
