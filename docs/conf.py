@@ -31,7 +31,6 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinxcontrib.apidoc',
     'nbsphinx',
-    'm2r',
     'myst_parser',
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
