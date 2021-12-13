@@ -28,9 +28,9 @@ author = 'FOXO Technologies'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'myst_parser',
     'sphinx.ext.autodoc',
     'sphinxcontrib.apidoc',
-    'm2r',
     'nbsphinx',
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
