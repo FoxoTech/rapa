@@ -8,3 +8,4 @@ seaborn
 sphinxcontrib-apidoc
 m2r
 nbsphinx
+myst-parser
