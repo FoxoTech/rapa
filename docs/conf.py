@@ -12,9 +12,9 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../rapa/'))
+sys.path.insert(0, os.path.abspath('..'))
 
-apidoc_module_dir = 'rapa'
+apidoc_module_dir = '..'
 apidoc_output_dir = '_sphinx_build'
 apidoc_separate_modules = False
 
@@ -62,7 +62,7 @@ source_suffix = ['.rst', '.md']
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'sphinx_rtd_theme' #'alabaster', 'nature'
+#html_theme = 'sphinx_rtd_theme' #'alabaster', 'nature'
 html_logo = 'source/foxo_logo_orange_black.png'
 
 # Theme options are theme-specific and customize the look and feel of a theme
