@@ -530,7 +530,7 @@ class RAPABase():
 
         # ----------------------------------------------------------------------------------
         if config.DEBUG_STATEMENTS:
-            logging.debug(f'{project=} {starting_featurelist=} {metric=} {feature_range=}')
+            logging.debug(f'{project} {starting_featurelist=} {metric=} {feature_range=}')
         # ----------------------------------------------------------------------------------
 
         # waiting for any started before rapa
@@ -666,7 +666,7 @@ class RAPABase():
                     if 'feature_performance' in to_graph:
                         temp_start = time.time()
                         pbar.set_description(f'{pbar_prefix}Graphing feature performance stackplot')
-                        utils.feature_performance_stackplot(project=project,
+                        utils.feature_performance_stackplot(projectproject,
                                                             featurelist_prefix=featurelist_prefix,
                                                             starting_featurelist=starting_featurelist,
                                                             feature_impact_metric=feature_impact_metric,
@@ -699,7 +699,7 @@ class RAPABase():
                             previous_best_model = current_best_model
                     else: # get the best model and check their id
                         lives, previous_best_model = self._check_lives(lives=lives, 
-                                                                        project=project, 
+                                                                        projectproject, 
                                                                         previous_best_model=previous_best_model, 
                                                                         featurelist_prefix=featurelist_prefix, 
                                                                         metric=metric,

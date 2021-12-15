@@ -55,7 +55,7 @@ def find_project(project: str) -> dr.Project:
         elif len(project_list) == 1: # found one project with search, good
             return project_list[0]
         else: # more than one project was found
-            warn(f"Returning the first of multiple projects with \'{project}\': {project_list=}")
+            warn(f"Returning the first of multiple projects with \'{project}\': {project_list}")
             return project_list[0]
     
 
