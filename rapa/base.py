@@ -666,9 +666,9 @@ class RAPABase():
                     if 'feature_performance' in to_graph:
                         temp_start = time.time()
                         pbar.set_description(f'{pbar_prefix}Graphing feature performance stackplot')
-                        utils.feature_performance_stackplot(projectproject,
+                        utils.feature_performance_stackplot(project=project,
                                                             featurelist_prefix=featurelist_prefix,
-                                                            starting_featureliststarting_featurelist,
+                                                            starting_featurelist=starting_featurelist,
                                                             feature_impact_metric=feature_impact_metric,
                                                             metric=metric)
                         plt.show()
@@ -699,7 +699,7 @@ class RAPABase():
                             previous_best_model = current_best_model
                     else: # get the best model and check their id
                         lives, previous_best_model = self._check_lives(lives=lives, 
-                                                                        projectproject, 
+                                                                        project=project, 
                                                                         previous_best_model=previous_best_model, 
                                                                         featurelist_prefix=featurelist_prefix, 
                                                                         metric=metric,
