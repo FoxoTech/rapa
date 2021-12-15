@@ -530,7 +530,7 @@ class RAPABase():
 
         # ----------------------------------------------------------------------------------
         if config.DEBUG_STATEMENTS:
-            logging.debug(f'{project} {starting_featurelist=} {metric=} {feature_range=}')
+            logging.debug(f'{project} {starting_featurelist} {metric} {feature_range}')
         # ----------------------------------------------------------------------------------
 
         # waiting for any started before rapa
@@ -668,7 +668,7 @@ class RAPABase():
                         pbar.set_description(f'{pbar_prefix}Graphing feature performance stackplot')
                         utils.feature_performance_stackplot(projectproject,
                                                             featurelist_prefix=featurelist_prefix,
-                                                            starting_featurelist=starting_featurelist,
+                                                            starting_featureliststarting_featurelist,
                                                             feature_impact_metric=feature_impact_metric,
                                                             metric=metric)
                         plt.show()
@@ -695,7 +695,7 @@ class RAPABase():
                         if previous_best_model_score > current_best_model_score:
                             lives -= 1
                             tqdm.write(f'Current model performance: \'{current_best_model_score}\'. Last best model performance: \'{previous_best_model_score}\'\nNo change in the best model, so a life was lost.\nLives remaining: \'{lives}\'')
-                            logging.debug(f'{current_best_model_score=}, {previous_best_model_score=}, {lives=}')
+                            logging.debug(f'{current_best_model_score}, {previous_best_model_score}, {lives}')
                             previous_best_model = current_best_model
                     else: # get the best model and check their id
                         lives, previous_best_model = self._check_lives(lives=lives, 
@@ -712,7 +712,7 @@ class RAPABase():
 
                     # ----------------------------------------------------------------------------------
                     if verbose:
-                        tqdm.write(f'Lives left: {lives} | Previous Model Best Score: {previous_best_model_score} | Current Best Model Score: {current_best_model_score=}')
+                        tqdm.write(f'Lives left: {lives} | Previous Model Best Score: {previous_best_model_score} | Current Best Model Score: {current_best_model_score}')
                     # ----------------------------------------------------------------------------------
                     
                 # ----- cv_average_mean_error_limit -----
@@ -729,7 +729,7 @@ class RAPABase():
                     print(f'Mean Error Limit: {time.time()-temp_start:.{config.TIME_DECIMALS}f}s')
                     if error_from_mean > cv_average_mean_error_limit:
                         tqdm.write(f'Error from the mean over the limit! Stopping parsimony analysis.\nError from the mean: \'{error_from_mean}\'\nLimit set: \'{cv_average_mean_error_limit}\'')
-                        logging.debug(f'{error_from_mean=}, {cv_average_mean_error_limit=}')
+                        logging.debug(f'{error_from_mean}, {cv_average_mean_error_limit}')
                         break
                     # ----------------------------------------------------------------------------------
                     if verbose:
