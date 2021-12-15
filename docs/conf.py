@@ -14,6 +14,9 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../rapa/'))
 
+apidoc_module_dir = 'rapa'
+apidoc_output_dir = '_sphinx_build'
+apidoc_separate_modules = False
 
 # -- Project information -----------------------------------------------------
 
