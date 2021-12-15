@@ -11,7 +11,7 @@ Welcome to rapa's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   tutorials/00-data-preparation.ipynb
+   docs/source/modules
 
 
 Indices and tables
