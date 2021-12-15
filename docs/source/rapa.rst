@@ -7,7 +7,7 @@ Submodules
 rapa.base module
 ----------------
 
-.. automodule:: rapa.base
+.. autoclass:: rapa.base
    :members:
    :undoc-members:
    :show-inheritance:
@@ -23,7 +23,7 @@ rapa.config module
 rapa.rapa module
 ----------------
 
-.. automodule:: rapa.rapa
+.. autoclass:: rapa.rapa
    :members:
    :undoc-members:
    :show-inheritance:
