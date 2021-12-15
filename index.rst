@@ -6,11 +6,12 @@
 Welcome to rapa's documentation!
 ================================
 
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   source/modules
+   tutorials/00-data-preparation.ipynb
 
 
 Indices and tables
