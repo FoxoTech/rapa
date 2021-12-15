@@ -144,7 +144,7 @@ def get_best_model(project: dr.Project,
                 num_no_cv += 1
 
         if len(averages) == 0:
-            warn(f'There were no cross-validated models in \'{project=}\'')
+            warn(f'There were no cross-validated models in "{project}"')
             return None
         else:
             return averages[sorted(averages.keys())[-1]] # highest metric is 'best' TODO: support the other metrics
