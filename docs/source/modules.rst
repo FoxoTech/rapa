@@ -10,26 +10,21 @@ API Reference
     :undoc-members:
     :show-inheritance:
 
-processing
+rapa
 ##########
 
-.. automodule:: methylprep.processing
+.. autoclass:: rapa.rapa
     :members:
 
-models
+utils
 ######
 
-.. automodule:: methylprep.models
+.. automodule:: rapa.utils
     :members:
 
-files
+base
 #####
 
-.. automodule:: methylprep.files
+.. autoclass:: rapa.base
     :members:
 
-geo download
-############
-
-.. automodule:: methylprep.download
-    :members:
