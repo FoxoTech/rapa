@@ -1,24 +1,8 @@
-rapa package
+RAPA Module
 ============
 
 
-rapa.base module
-----------------
-
-.. automodule:: rapa.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-rapa.config module
-------------------
-
-.. automodule:: rapa.config
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-rapa.rapa module
+Classes
 ----------------
 
 .. automodule:: rapa.rapa
@@ -26,26 +10,15 @@ rapa.rapa module
    :undoc-members:
    :show-inheritance:
 
-rapa.utils module
+.. automodule:: rapa.base
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Utility Functions
 -----------------
 
 .. automodule:: rapa.utils
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-rapa.version module
--------------------
-
-.. automodule:: rapa.version
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: rapa
    :members:
    :undoc-members:
    :show-inheritance:

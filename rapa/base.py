@@ -426,8 +426,7 @@ class RAPABase():
                     * datarobot.AUTOPILOT_MODE.FULL_AUTO
                     * datarobot.AUTOPILOT_MODE.QUICK
                     * datarobot.AUTOPILOT_MODE.MANUAL
-                    * datarobot.AUTOPILOT_MODE.COMPREHENSIVE: Runs all blueprints in
-                    the repository (warning: this may be extremely slow).
+                    * datarobot.AUTOPILOT_MODE.COMPREHENSIVE: Runs all blueprints in the repository (warning: this may be extremely slow).
             
             lives: int, optional (default = None)
                 The number of times allowed for reducing the featurelist and obtaining a worse model. By default,
