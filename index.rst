@@ -12,6 +12,7 @@ Welcome to rapa's documentation!
    :caption: Contents:
 
    docs/source/modules
+   docs/source/moodules
 
 
 Indices and tables
