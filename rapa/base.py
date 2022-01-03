@@ -356,8 +356,7 @@ class RAPABase():
                     *  datarobot.AUTOPILOT_MODE.FULL_AUTO
                     *  datarobot.AUTOPILOT_MODE.QUICK
                     *  datarobot.AUTOPILOT_MODE.MANUAL
-                    *  datarobot.AUTOPILOT_MODE.COMPREHENSIVE: Runs all blueprints in
-                    the repository (this may be extremely slow).
+                    *  datarobot.AUTOPILOT_MODE.COMPREHENSIVE: Runs all blueprints in the repository (this may be extremely slow).
 
             random_state: int, optional (default: None)
                 The random number generator seed for DataRobot. Use this parameter to make sure
@@ -451,7 +450,10 @@ class RAPABase():
             
             feature_impact_metric: str, optional (default = 'median')
                 How RAPA will decide each feature's importance over every model in a feature list
-                    Options: 'median', 'mean', or 'cumulative'
+                    Options: 
+                    * median
+                    * mean
+                    * cumulative
 
             progress_bar: bool, optional (default = True)
                 If True, a simple progres bar displaying complete and incomplete featurelists. 
