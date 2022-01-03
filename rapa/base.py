@@ -187,8 +187,19 @@ class RAPABase():
         Creates pre-determined k-fold cross-validation splits and filters the feature
         set down to a size that DataRobot can receive as input, if necessary. TODO: private function submit_datarobot_project explanation
 
+        #Parameters
+
+        Parameters: test
+        
+        ==========
         Parameters
-        ++++++++++
+        ==========
+
+        **********
+        Parameters
+        **********
+
+        Parameters:
             input_data_df: pandas.DataFrame
                 pandas DataFrame containing the feature set and prediction target.
 
@@ -335,9 +346,9 @@ class RAPABase():
             a binary classification, multiclass classification, or regression project.
 
             Options:
-                datarobot.TARGET_TYPE.BINARY
-                datarobot.TARGET_TYPE.REGRESSION
-                datarobot.TARGET_TYPE.MULTICLASS
+                * datarobot.TARGET_TYPE.BINARY
+                * datarobot.TARGET_TYPE.REGRESSION
+                * datarobot.TARGET_TYPE.MULTICLASS
 
         worker_count: int, optional (default: -1)
             The number of worker engines to assign to the DataRobot project.
@@ -352,10 +363,10 @@ class RAPABase():
             The modeling mode to start the DataRobot project in.
 
             Options:
-                datarobot.AUTOPILOT_MODE.FULL_AUTO
-                datarobot.AUTOPILOT_MODE.QUICK
-                datarobot.AUTOPILOT_MODE.MANUAL
-                datarobot.AUTOPILOT_MODE.COMPREHENSIVE: Runs all blueprints in
+                *  datarobot.AUTOPILOT_MODE.FULL_AUTO
+                *  datarobot.AUTOPILOT_MODE.QUICK
+                *  datarobot.AUTOPILOT_MODE.MANUAL
+                *  datarobot.AUTOPILOT_MODE.COMPREHENSIVE: Runs all blueprints in
                 the repository (warning: this may be extremely slow).
 
         random_state: int, optional (default: None)
