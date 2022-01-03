@@ -1,8 +1,6 @@
 rapa package
 ============
 
-Submodules
-----------
 
 rapa.base module
 ----------------

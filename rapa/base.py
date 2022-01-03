@@ -40,10 +40,10 @@ class RAPABase():
 
     POSSIBLE_TARGET_TYPES = [x for x in dir(dr.enums.TARGET_TYPE) if not x.startswith('__')] # List of DR TARGET_TYPES
 
-    """_classification = None # Set by child classes
-    target_type = None # Set at initialization
-    # target_name = None # Set with 'create_submittable_dataframe()'
-    project = None # Set at initialization or with 'perform_parsimony()'"""
+    """
+    |  _classification = None # Set by child classes
+    |  target_type = None # Set at initialization
+    |  project = None # Set at initialization or with 'perform_parsimony()'"""
 
     def __init__(self, project: Union[dr.Project, str] = None):
         if self.__class__.__name__ == "RAPABase":
@@ -187,52 +187,52 @@ class RAPABase():
         Creates pre-determined k-fold cross-validation splits and filters the feature
         set down to a size that DataRobot can receive as input, if necessary. TODO: private function submit_datarobot_project explanation
 
-        ## Parameters
-        ----------
-        input_data_df: pandas.DataFrame
-            pandas DataFrame containing the feature set and prediction target.
+        Parameters
+        ++++++++++
+            input_data_df: pandas.DataFrame
+                pandas DataFrame containing the feature set and prediction target.
 
-        target_name: str
-            Name of the prediction target column in `input_data_df`.
+            target_name: str
+                Name of the prediction target column in `input_data_df`.
 
-        n_features: int, optional (default: 19990)
-            The number of features to reduce the feature set in `input_data_df`
-            down to. DataRobot's maximum feature set size is 20,000.
-            If `n_features` has the same number of features as the `input_data_df`,
-            NaN values are allowed because no feature filtering will ocurr
+            n_features: int, optional (default: 19990)
+                The number of features to reduce the feature set in `input_data_df`
+                down to. DataRobot's maximum feature set size is 20,000.
+                If `n_features` has the same number of features as the `input_data_df`,
+                NaN values are allowed because no feature filtering will ocurr
 
-        n_splits: int, optional (default: 6)
-            The number of cross-validation splits to create. One of the splits
-            will be retained as a holdout split, so by default this function
-            sets up the dataset for 5-fold cross-validation with a holdout.
+            n_splits: int, optional (default: 6)
+                The number of cross-validation splits to create. One of the splits
+                will be retained as a holdout split, so by default this function
+                sets up the dataset for 5-fold cross-validation with a holdout.
 
-        filter_function: callable, optional (default: None)
-            The function used to calculate the importance of each feature in
-            the initial filtering step that reduces the feature set down to
-            `max_features`.
+            filter_function: callable, optional (default: None)
+                The function used to calculate the importance of each feature in
+                the initial filtering step that reduces the feature set down to
+                `max_features`.
 
-            This filter function must take a feature matrix as the first input
-            and the target array as the second input, then return two separate
-            arrays containing the feature importance of each feature and the
-            P-value for that correlation, in that order.
+                This filter function must take a feature matrix as the first input
+                and the target array as the second input, then return two separate
+                arrays containing the feature importance of each feature and the
+                P-value for that correlation, in that order.
 
-            When None, the filter function is determined by child class.
-            If an instance of `RAPAClassif()`, sklearn.feature_selection.f_classif is used.
-            If `RAPARegress()`, sklearn.feature_selection.f_regression is used.
-            See scikit-learn's f_classif function for an example:
-            https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_regression.html
+                When None, the filter function is determined by child class.
+                If an instance of `RAPAClassif()`, sklearn.feature_selection.f_classif is used.
+                If `RAPARegress()`, sklearn.feature_selection.f_regression is used.
+                See scikit-learn's f_classif function for an example:
+                https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_regression.html
 
-        random_state: int, optional (default: None)
-            The random number generator seed for RAPA. Use this parameter to make sure
-            that RAPA will give you the same results each time you run it on the
-            same input data set with that seed.
+            random_state: int, optional (default: None)
+                The random number generator seed for RAPA. Use this parameter to make sure
+                that RAPA will give you the same results each time you run it on the
+                same input data set with that seed.
 
         Returns
-        ----------
-        pandas.DataFrame
-            DataFrame holds original values from the input Dataframe, but with 
-            pre-determined k-fold cross-validation splits, and was 
-            filtered down to 'max_features' size using the 'filter_function'
+        ++++++++++
+            pandas.DataFrame
+                DataFrame holds original values from the input Dataframe, but with 
+                pre-determined k-fold cross-validation splits, and was 
+                filtered down to 'max_features' size using the 'filter_function'
         """
         #TODO: make private function? 
         # Check dataframe has 'target_name' columns
