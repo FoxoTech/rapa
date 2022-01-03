@@ -187,19 +187,8 @@ class RAPABase():
         Creates pre-determined k-fold cross-validation splits and filters the feature
         set down to a size that DataRobot can receive as input, if necessary. TODO: private function submit_datarobot_project explanation
 
-        #Parameters
 
-        Parameters: test
-        
-        ==========
-        Parameters
-        ==========
-
-        **********
-        Parameters
-        **********
-
-        Parameters:
+        :Parameters:
             input_data_df: pandas.DataFrame
                 pandas DataFrame containing the feature set and prediction target.
 
