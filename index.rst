@@ -12,7 +12,7 @@ Welcome to rapa's documentation!
    :caption: Contents:
 
    docs/source/modules
-   docs/source/moodules
+   tutorials/general_tutorial.ipynb
 
 
 Indices and tables
