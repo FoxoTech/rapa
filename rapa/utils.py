@@ -247,7 +247,8 @@ def parsimony_performance_boxplot(project: dr.Project,
                                 split: str = 'crossValidation',
                                 featurelist_lengths: list = None):
     """Uses `seaborn`'s `boxplot` function to plot featurelist size vs performance
-    for all models that use that featurelist. # TODO warn about multiple prefixes, try to use new prefixes
+    for all models that use that featurelist prefix. There is a different boxplot for
+    each featurelist length. # TODO warn about multiple prefixes, try to use new prefixes
 
     :Paremeters:
     ----------
@@ -332,7 +333,11 @@ def feature_performance_stackplot(project: dr.Project,
         
         feature_impact_metric: str, optional (default = mean)
             Which metric to use when finding the  most representative feature importance of all models in the featurelist
-                Options: 'median', 'mean', or 'cumulative'
+
+            Options:
+                * median
+                * mean
+                * cumulative
 
         metric: str, optional (default = 'AUC')
             Which metric to use when finding feature importance of each model
