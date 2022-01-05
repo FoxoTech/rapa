@@ -53,7 +53,7 @@ class RAPABase():
         self.project = None
 
     @staticmethod
-    def _wait_for_jobs(project: dr.Project, progress_bar: bool = True, sleep_time: int = 5, pbar = None, pbar_prefix: str = '', job_type: str = ''):
+    def _wait_for_jobs(project: dr.Project, progress_bar: bool = True, sleep_time: int = 5, pbar = None, pbar_prefix: str = '', job_type: str = '', timeout = 21600):
         """Gets all the jobs for a project, and if there are more than 0 current jobs, 
         sleeps for 5 seconds and checks again.
 
@@ -78,6 +78,7 @@ class RAPABase():
             job_type: str, optional (default = '')
                 A string to put in front of the jobs left (after pbar_prefix)
         """
+        start_time = time.time()
         if len(project.get_all_jobs()) > 0:
             if progress_bar:
                 if pbar:
@@ -86,14 +87,17 @@ class RAPABase():
                     tqdm.write(f'\r{job_type}job(s) remaining ({len(project.get_all_jobs())})', end='') 
             time.sleep(sleep_time)
         while len(project.get_all_jobs()) > 0:
-            if progress_bar: # PROGRESS BAR
-                if pbar:
-                    pbar.set_description(f'{pbar_prefix}Feature Impact job(s) remaining ({len(project.get_all_jobs())})') 
-                else:
-                    tqdm.write(f'\r{job_type}job(s) remaining ({len(project.get_all_jobs())})', end='') 
-            time.sleep(sleep_time)
-        if not progress_bar:
-            tqdm.write(f'\r{job_type}job(s) remaining ({len(project.get_all_jobs())})', end='\n') 
+            while len(project.get_all_jobs()) > 0: # double check
+                if progress_bar: # PROGRESS BAR
+                    if pbar:
+                        pbar.set_description(f'{pbar_prefix}Feature Impact job(s) remaining ({len(project.get_all_jobs())})') 
+                    else:
+                        tqdm.write(f'\r{job_type}job(s) remaining ({len(project.get_all_jobs())})', end='') 
+                time.sleep(sleep_time)
+                if time.time()-start_time >= timeout:
+                    raise TimeoutError
+            time.sleep(sleep_time+5)# sometimes all jobs will be complete and no jobs will be in queue, but then more jobs will be created
+        tqdm.write(f'\r{job_type}job(s) remaining ({len(project.get_all_jobs())})', end='\n') 
         return None 
 
     @staticmethod
@@ -532,7 +536,7 @@ class RAPABase():
 
         # ----------------------------------------------------------------------------------
         if config.DEBUG_STATEMENTS:
-            logging.debug(f'{project} {starting_featurelist} {metric} {feature_range}')
+            logging.debug(f'project:{project}| starting_featurelist:{starting_featurelist}| metric:{metric}| feature_range:{feature_range}')
         # ----------------------------------------------------------------------------------
 
         # waiting for any started before rapa
@@ -543,8 +547,12 @@ class RAPABase():
         temp_start = time.time()
         tqdm.write(f'{starting_featurelist_name}: Waiting for feature impact...')
 
+
         # get the models from starting featurelist
         datarobot_project_models = project.get_models()
+        if len(datarobot_project_models) == 0:
+            raise Exception(f'There are no models in the datarobot project "{project}"')
+
 
         for model in datarobot_project_models: # for each model
             if model.featurelist_id == starting_featurelist.id: # if the model uses the starting featurelist, request the feature impact
@@ -561,13 +569,14 @@ class RAPABase():
         self._wait_for_jobs(project, job_type='Feature Impact ')
         tqdm.write(f'Feature Impact: ({time.time()-temp_start:.{config.TIME_DECIMALS}f}s)')
 
+
         # get feature impact/importances of original featurelist
         all_feature_importances = []
         for model in datarobot_project_models:
-            if model.featurelist_id == starting_featurelist.id: # if the model uses the starting featurelist, request the feature impact
+            if model.featurelist_id == starting_featurelist.id: # request feature impact for starting featurelist models
                 if model.metrics[metric]['crossValidation'] != None:
                     all_feature_importances.extend(model.get_feature_impact())
-        
+
         # sort by features by feature importance statistic 
         stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized']
         if feature_impact_metric.lower() == 'median':
