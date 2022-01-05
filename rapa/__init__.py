@@ -3,3 +3,4 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 from . import rapa
+from . import version
