@@ -132,3 +132,4 @@ data/*
 .DS_Store
 .vscode/*
 tutorials/data
+tutorials/data/*
