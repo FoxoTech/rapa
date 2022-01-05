@@ -6,10 +6,13 @@
 Welcome to rapa's documentation!
 ================================
 
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   docs/source/modules
+   docs/source/moodules
 
 
 Indices and tables
