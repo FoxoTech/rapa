@@ -40,10 +40,10 @@ class RAPABase():
 
     POSSIBLE_TARGET_TYPES = [x for x in dir(dr.enums.TARGET_TYPE) if not x.startswith('__')] # List of DR TARGET_TYPES
 
-    """_classification = None # Set by child classes
-    target_type = None # Set at initialization
-    # target_name = None # Set with 'create_submittable_dataframe()'
-    project = None # Set at initialization or with 'perform_parsimony()'"""
+    """
+    * _classification = None # Set by child classes
+    * target_type = None # Set at initialization
+    * project = None # Set at initialization or with 'perform_parsimony()'"""
 
     def __init__(self, project: Union[dr.Project, str] = None):
         if self.__class__.__name__ == "RAPABase":
@@ -57,26 +57,26 @@ class RAPABase():
         """Gets all the jobs for a project, and if there are more than 0 current jobs, 
         sleeps for 5 seconds and checks again.
 
-        ## Parameters
-        ----------
-        project: datarobot.Project
-            The datarobot.Project that will be probed for current jobs
-        
-        progress_bar: bool, optional (default = True)
-            If True, a print statement and a progress bar will appear TODO: a print statement and a progress bar will appear
+        :Parameters:
+        ------------
+            project: datarobot.Project
+                The datarobot.Project that will be probed for current jobs
+            
+            progress_bar: bool, optional (default = True)
+                If True, a print statement and a progress bar will appear TODO: a print statement and a progress bar will appear
 
-        sleep_time: int, optional (default = 5)
-            The time to sleep between datarobot.Project.get_all_jobs() 
-            (avoid sending too many api requests) TODO: warning or check for max api requests
-        
-        pbar: tqdm.tqdm, optional (defaut = None)
-            A progress bar object from tqdm
-        
-        pbar_prefix: str, optional (default = '')
-            The prefix to put in frot of the progress bar message
-        
-        job_type: str, optional (default = '')
-            A string to put in front of the jobs left (after pbar_prefix)
+            sleep_time: int, optional (default = 5)
+                The time to sleep between datarobot.Project.get_all_jobs() 
+                (avoid sending too many api requests) TODO: warning or check for max api requests
+            
+            pbar: tqdm.tqdm, optional (defaut = None)
+                A progress bar object from tqdm
+            
+            pbar_prefix: str, optional (default = '')
+                The prefix to put in frot of the progress bar message
+            
+            job_type: str, optional (default = '')
+                A string to put in front of the jobs left (after pbar_prefix)
         """
         if len(project.get_all_jobs()) > 0:
             if progress_bar:
@@ -112,39 +112,39 @@ class RAPABase():
         the number of 'lives' left in the first position, and the current 'best' model
         in the second position.
 
-        ## Parameters
+        :Parameters:
+        ------------
+            lives: int
+                The current number of 'lives' remaining in parsimony analysis
+
+            project: datarobot.Project
+                The datarobot.Project parsimony analysis is being performed in
+            
+            previous_best_model: datarobot.Model
+                The previously 'best' model in the datarobot.Project before
+                a round of parsimony analysis
+
+            featurelist_prefix: str, optional (default = None)
+                The desired prefix for the featurelists that will be used for searching
+                for the 'best' model. If None, will search the entire datarobot.Project
+            
+            starred: bool, optional (default = False)
+                If True, searching the project's starred models. If False, searches
+                all of the project's models
+            
+            metric: str, optional (default = 'AUC')
+                What model cross validation metric to use when averaging scores to
+                find the 'best' model
+            
+            verbose: bool, optional (default = True)
+                If True, prints previous and current best model information when 
+                before returning
+
+        :Returns:
         ----------
-        lives: int
-            The current number of 'lives' remaining in parsimony analysis
-
-        project: datarobot.Project
-            The datarobot.Project parsimony analysis is being performed in
-        
-        previous_best_model: datarobot.Model
-            The previously 'best' model in the datarobot.Project before
-            a round of parsimony analysis
-
-        featurelist_prefix: str, optional (default = None)
-            The desired prefix for the featurelists that will be used for searching
-            for the 'best' model. If None, will search the entire datarobot.Project
-        
-        starred: bool, optional (default = False)
-            If True, searching the project's starred models. If False, searches
-            all of the project's models
-        
-        metric: str, optional (default = 'AUC')
-            What model cross validation metric to use when averaging scores to
-            find the 'best' model
-        
-        verbose: bool, optional (default = True)
-            If True, prints previous and current best model information when 
-            before returning
-
-        ## Returns
-        ----------
-        Tuple(int, datarobot.Model)
-            A tuple with the new `lives` in the first position, and the new
-            'best' model after one round of persimony analysis
+            Tuple(int, datarobot.Model)
+                A tuple with the new `lives` in the first position, and the new
+                'best' model after one round of persimony analysis
         """
 
         # check for the best model (supplied metric of cv)
@@ -187,52 +187,53 @@ class RAPABase():
         Creates pre-determined k-fold cross-validation splits and filters the feature
         set down to a size that DataRobot can receive as input, if necessary. TODO: private function submit_datarobot_project explanation
 
-        ## Parameters
-        ----------
-        input_data_df: pandas.DataFrame
-            pandas DataFrame containing the feature set and prediction target.
 
-        target_name: str
-            Name of the prediction target column in `input_data_df`.
+        :Parameters:
+        ------------
+            input_data_df: pandas.DataFrame
+                pandas DataFrame containing the feature set and prediction target.
 
-        n_features: int, optional (default: 19990)
-            The number of features to reduce the feature set in `input_data_df`
-            down to. DataRobot's maximum feature set size is 20,000.
-            If `n_features` has the same number of features as the `input_data_df`,
-            NaN values are allowed because no feature filtering will ocurr
+            target_name: str
+                Name of the prediction target column in `input_data_df`.
 
-        n_splits: int, optional (default: 6)
-            The number of cross-validation splits to create. One of the splits
-            will be retained as a holdout split, so by default this function
-            sets up the dataset for 5-fold cross-validation with a holdout.
+            n_features: int, optional (default: 19990)
+                The number of features to reduce the feature set in `input_data_df`
+                down to. DataRobot's maximum feature set size is 20,000.
+                If `n_features` has the same number of features as the `input_data_df`,
+                NaN values are allowed because no feature filtering will ocurr
 
-        filter_function: callable, optional (default: None)
-            The function used to calculate the importance of each feature in
-            the initial filtering step that reduces the feature set down to
-            `max_features`.
+            n_splits: int, optional (default: 6)
+                The number of cross-validation splits to create. One of the splits
+                will be retained as a holdout split, so by default this function
+                sets up the dataset for 5-fold cross-validation with a holdout.
 
-            This filter function must take a feature matrix as the first input
-            and the target array as the second input, then return two separate
-            arrays containing the feature importance of each feature and the
-            P-value for that correlation, in that order.
+            filter_function: callable, optional (default: None)
+                The function used to calculate the importance of each feature in
+                the initial filtering step that reduces the feature set down to
+                `max_features`.
 
-            When None, the filter function is determined by child class.
-            If an instance of `RAPAClassif()`, sklearn.feature_selection.f_classif is used.
-            If `RAPARegress()`, sklearn.feature_selection.f_regression is used.
-            See scikit-learn's f_classif function for an example:
-            https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_regression.html
+                This filter function must take a feature matrix as the first input
+                and the target array as the second input, then return two separate
+                arrays containing the feature importance of each feature and the
+                P-value for that correlation, in that order.
 
-        random_state: int, optional (default: None)
-            The random number generator seed for RAPA. Use this parameter to make sure
-            that RAPA will give you the same results each time you run it on the
-            same input data set with that seed.
+                When None, the filter function is determined by child class.
+                If an instance of `RAPAClassif()`, sklearn.feature_selection.f_classif is used.
+                If `RAPARegress()`, sklearn.feature_selection.f_regression is used.
+                See scikit-learn's f_classif function for an example:
+                https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_regression.html
 
-        Returns
-        ----------
-        pandas.DataFrame
-            DataFrame holds original values from the input Dataframe, but with 
-            pre-determined k-fold cross-validation splits, and was 
-            filtered down to 'max_features' size using the 'filter_function'
+            random_state: int, optional (default: None)
+                The random number generator seed for RAPA. Use this parameter to make sure
+                that RAPA will give you the same results each time you run it on the
+                same input data set with that seed.
+
+        :Returns:
+        ------------
+            pandas.DataFrame
+                DataFrame holds original values from the input Dataframe, but with 
+                pre-determined k-fold cross-validation splits, and was 
+                filtered down to 'max_features' size using the 'filter_function'
         """
         #TODO: make private function? 
         # Check dataframe has 'target_name' columns
@@ -319,49 +320,48 @@ class RAPABase():
         'create_submittable_dataframe' function first with an instance of
         either RAPAClassif or RAPARegress.
 
-        Parameters
-        ----------
-        input_data_df: pandas.DataFrame
-            pandas DataFrame containing the feature set and prediction target.
+        :Parameters:
+        ------------
+            input_data_df: pandas.DataFrame
+                pandas DataFrame containing the feature set and prediction target.
 
-        target_name: str
-            Name of the prediction target column in `input_data_df`.
+            target_name: str
+                Name of the prediction target column in `input_data_df`.
 
-        project_name: str
-            Name of the project in DataRobot.
+            project_name: str
+                Name of the project in DataRobot.
 
-        target_type: str (enum)
-            Indicator to DataRobot of whether the new modeling project should be
-            a binary classification, multiclass classification, or regression project.
+            target_type: str (enum)
+                Indicator to DataRobot of whether the new modeling project should be
+                a binary classification, multiclass classification, or regression project.
 
-            Options:
-                datarobot.TARGET_TYPE.BINARY
-                datarobot.TARGET_TYPE.REGRESSION
-                datarobot.TARGET_TYPE.MULTICLASS
+                Options:
+                    * datarobot.TARGET_TYPE.BINARY
+                    * datarobot.TARGET_TYPE.REGRESSION
+                    * datarobot.TARGET_TYPE.MULTICLASS
 
-        worker_count: int, optional (default: -1)
-            The number of worker engines to assign to the DataRobot project.
-            By default, -1 tells DataRobot to use all available worker engines.
-        
-        metric: str, optional (default: None)
-            Name of the metric to use for evaluating models. You can query the metrics 
-            available for the target by way of Project.get_metrics. If none is specified, 
-            then the default recommended by DataRobot is used.
+            worker_count: int, optional (default: -1)
+                The number of worker engines to assign to the DataRobot project.
+                By default, -1 tells DataRobot to use all available worker engines.
+            
+            metric: str, optional (default: None)
+                Name of the metric to use for evaluating models. You can query the metrics 
+                available for the target by way of Project.get_metrics. If none is specified, 
+                then the default recommended by DataRobot is used.
 
-        mode: str (enum), optional (default: datarobot.AUTOPILOT_MODE.FULL_AUTO)
-            The modeling mode to start the DataRobot project in.
+            mode: str (enum), optional (default: datarobot.AUTOPILOT_MODE.FULL_AUTO)
+                The modeling mode to start the DataRobot project in.
 
-            Options:
-                datarobot.AUTOPILOT_MODE.FULL_AUTO
-                datarobot.AUTOPILOT_MODE.QUICK
-                datarobot.AUTOPILOT_MODE.MANUAL
-                datarobot.AUTOPILOT_MODE.COMPREHENSIVE: Runs all blueprints in
-                the repository (warning: this may be extremely slow).
+                Options:
+                    *  datarobot.AUTOPILOT_MODE.FULL_AUTO
+                    *  datarobot.AUTOPILOT_MODE.QUICK
+                    *  datarobot.AUTOPILOT_MODE.MANUAL
+                    *  datarobot.AUTOPILOT_MODE.COMPREHENSIVE: Runs all blueprints in the repository (this may be extremely slow).
 
-        random_state: int, optional (default: None)
-            The random number generator seed for DataRobot. Use this parameter to make sure
-            that DataRobot will give you the same results each time you run it on the
-            same input data set with that seed.
+            random_state: int, optional (default: None)
+                The random number generator seed for DataRobot. Use this parameter to make sure
+                that DataRobot will give you the same results each time you run it on the
+                same input data set with that seed.
 
         """
         # TODO: provide an option for columns to disregard
@@ -402,72 +402,74 @@ class RAPABase():
         NOTICE: Feature impact scores are only gathered from models that have had their 
         **cross-validation accuracy** tested!
 
-        Parameters:
-        ----------
-        feature_range: list[int] | list[float]
-            Either a list containing integers representing desired featurelist lengths,
-            or a list containing floats representing desired featurelist percentages (of the original featurelist size)
+        :Parameters:
+        ------------
+            feature_range: list[int] | list[float]
+                Either a list containing integers representing desired featurelist lengths,
+                or a list containing floats representing desired featurelist percentages (of the original featurelist size)
 
-        project: datarobot.Project | str, optional (default = None)
-            Either a datarobot project, or a string of it's id or name. If None,
-            uses the project that was provided to create the rapa class
-        
-        starting_featurelist: str, optional (default = 'Informative Features')
-            The name or id of the featurelist that rapa will start pasimony analysis with
+            project: datarobot.Project | str, optional (default = None)
+                Either a datarobot project, or a string of it's id or name. If None,
+                uses the project that was provided to create the rapa class
+            
+            starting_featurelist: str, optional (default = 'Informative Features')
+                The name or id of the featurelist that rapa will start pasimony analysis with
 
-        featurelist_prefix: str, optional (default = 'RAPA Reduced to')
-            The desired prefix for the featurelists that rapa creates in datarobot. Each featurelist
-            will start with the prefix, include a space, and then end with the number of features in that featurelist
+            featurelist_prefix: str, optional (default = 'RAPA Reduced to')
+                The desired prefix for the featurelists that rapa creates in datarobot. Each featurelist
+                will start with the prefix, include a space, and then end with the number of features in that featurelist
 
-        mode: str (enum), optional (default: datarobot.AUTOPILOT_MODE.FULL_AUTO)
-            The modeling mode to start the DataRobot project in.
-            Options:
-                datarobot.AUTOPILOT_MODE.FULL_AUTO
-                datarobot.AUTOPILOT_MODE.QUICK
-                datarobot.AUTOPILOT_MODE.MANUAL
-                datarobot.AUTOPILOT_MODE.COMPREHENSIVE: Runs all blueprints in
-                the repository (warning: this may be extremely slow).
-        
-        lives: int, optional (default = None)
-            The number of times allowed for reducing the featurelist and obtaining a worse model. By default,
-            'lives' are off, and the entire 'feature_range' will be ran, but if supplied a number >= 0, then 
-            that is the number of 'lives' there are. 
+            mode: str (enum), optional (default: datarobot.AUTOPILOT_MODE.FULL_AUTO)
+                The modeling mode to start the DataRobot project in.
+                Options:
+                    * datarobot.AUTOPILOT_MODE.FULL_AUTO
+                    * datarobot.AUTOPILOT_MODE.QUICK
+                    * datarobot.AUTOPILOT_MODE.MANUAL
+                    * datarobot.AUTOPILOT_MODE.COMPREHENSIVE: Runs all blueprints in the repository (warning: this may be extremely slow).
+            
+            lives: int, optional (default = None)
+                The number of times allowed for reducing the featurelist and obtaining a worse model. By default,
+                'lives' are off, and the entire 'feature_range' will be ran, but if supplied a number >= 0, then 
+                that is the number of 'lives' there are. 
 
-            Ex: lives = 0, feature_range = [100, 90, 80, 50]
-            RAPA finds that after making all the models for the length 80 featurelist, the 'best' model was created with the length
-            90 featurelist, so it stops and doesn't make a featurelist of length 50.
+                Ex: lives = 0, feature_range = [100, 90, 80, 50]
+                RAPA finds that after making all the models for the length 80 featurelist, the 'best' model was created with the length
+                90 featurelist, so it stops and doesn't make a featurelist of length 50.
 
-            Similar to datarobot's Feature Importance Rank Ensembling for advanced feature selection (FIRE) package's 'lifes' 
-            https://www.datarobot.com/blog/using-feature-importance-rank-ensembling-fire-for-advanced-feature-selection/ 
-        
-        cv_mean_error_limit: float, optional (default = None)
-            The limit of cross validation mean error to help avoid overfitting. By default, the limit is off, 
-            and the each 'feature_range' will be ran. Limit exists only if supplied a number >= 0.0
+                Similar to datarobot's Feature Importance Rank Ensembling for advanced feature selection (FIRE) package's 'lifes' 
+                https://www.datarobot.com/blog/using-feature-importance-rank-ensembling-fire-for-advanced-feature-selection/ 
+            
+            cv_mean_error_limit: float, optional (default = None)
+                The limit of cross validation mean error to help avoid overfitting. By default, the limit is off, 
+                and the each 'feature_range' will be ran. Limit exists only if supplied a number >= 0.0
 
-            Ex: 'feature_range' = 2.5, feature_range = [100, 90, 80, 50]
-            RAPA finds that the average AUC for each CV fold is [.8, .6, .9, .5] respectfully,
-            the mean of these is 0.7. The average error is += 0.15. If 0.15 >= cv_mean_error_limit,
-            the training stops.
-        
-        feature_impact_metric: str, optional (default = 'median')
-            How RAPA will decide each feature's importance over every model in a feature list
-                Options: 'median', 'mean', or 'cumulative'
+                Ex: 'feature_range' = 2.5, feature_range = [100, 90, 80, 50]
+                    RAPA finds that the average AUC for each CV fold is [.8, .6, .9, .5] respectfully,
+                    the mean of these is 0.7. The average error is += 0.15. If 0.15 >= cv_mean_error_limit,
+                    the training stops.
+            
+            feature_impact_metric: str, optional (default = 'median')
+                How RAPA will decide each feature's importance over every model in a feature list
+                    Options: 
+                    * median
+                    * mean
+                    * cumulative
 
-        progress_bar: bool, optional (default = True)
-            If True, a simple progres bar displaying complete and incomplete featurelists. 
-            If False, provides updates in stdout Ex: current worker count, current featurelist, etc.
+            progress_bar: bool, optional (default = True)
+                If True, a simple progres bar displaying complete and incomplete featurelists. 
+                If False, provides updates in stdout Ex: current worker count, current featurelist, etc.
 
-        to_graph: List[str], optional (default = None)
-            A list of keys choosing which graphs to produce. Possible Keys:
-                'models': `seaborn` boxplot with model performances with provided metric
-                'feature_performance': `matplotlib.pyplot` stackplot of feature performances
+            to_graph: List[str], optional (default = None)
+                A list of keys choosing which graphs to produce. Possible Keys:
+                    * 'models': `seaborn` boxplot with model performances with provided metric
+                    * 'feature_performance': `matplotlib.pyplot` stackplot of feature performances
 
-        metric: str, optional (default = None)
-            The metric used for scoring models, when finding the 'best' model, and when
-            plotting model performance
+            metric: str, optional (default = None)
+                The metric used for scoring models, when finding the 'best' model, and when
+                plotting model performance
 
-            When None, the metric is determined by what class inherits from base. For instance,
-            a `RAPAClassif` instance's default is 'AUC', and `RAPARegress` is 'R Squared'
+                When None, the metric is determined by what class inherits from base. For instance,
+                a `RAPAClassif` instance's default is 'AUC', and `RAPARegress` is 'R Squared'
         """ 
         # TODO: return a dictionary of values? {"time_taken": 2123, "cv_mean_error": list[floats], ""}
         # TODO: graph cv performance boxplots
@@ -530,7 +532,7 @@ class RAPABase():
 
         # ----------------------------------------------------------------------------------
         if config.DEBUG_STATEMENTS:
-            logging.debug(f'{project=} {starting_featurelist=} {metric=} {feature_range=}')
+            logging.debug(f'{project} {starting_featurelist} {metric} {feature_range}')
         # ----------------------------------------------------------------------------------
 
         # waiting for any started before rapa
@@ -695,7 +697,7 @@ class RAPABase():
                         if previous_best_model_score > current_best_model_score:
                             lives -= 1
                             tqdm.write(f'Current model performance: \'{current_best_model_score}\'. Last best model performance: \'{previous_best_model_score}\'\nNo change in the best model, so a life was lost.\nLives remaining: \'{lives}\'')
-                            logging.debug(f'{current_best_model_score=}, {previous_best_model_score=}, {lives=}')
+                            logging.debug(f'{current_best_model_score}, {previous_best_model_score}, {lives}')
                             previous_best_model = current_best_model
                     else: # get the best model and check their id
                         lives, previous_best_model = self._check_lives(lives=lives, 
@@ -712,7 +714,7 @@ class RAPABase():
 
                     # ----------------------------------------------------------------------------------
                     if verbose:
-                        tqdm.write(f'Lives left: {lives} | Previous Model Best Score: {previous_best_model_score} | Current Best Model Score: {current_best_model_score=}')
+                        tqdm.write(f'Lives left: {lives} | Previous Model Best Score: {previous_best_model_score} | Current Best Model Score: {current_best_model_score}')
                     # ----------------------------------------------------------------------------------
                     
                 # ----- cv_average_mean_error_limit -----
@@ -729,7 +731,7 @@ class RAPABase():
                     print(f'Mean Error Limit: {time.time()-temp_start:.{config.TIME_DECIMALS}f}s')
                     if error_from_mean > cv_average_mean_error_limit:
                         tqdm.write(f'Error from the mean over the limit! Stopping parsimony analysis.\nError from the mean: \'{error_from_mean}\'\nLimit set: \'{cv_average_mean_error_limit}\'')
-                        logging.debug(f'{error_from_mean=}, {cv_average_mean_error_limit=}')
+                        logging.debug(f'{error_from_mean}, {cv_average_mean_error_limit}')
                         break
                     # ----------------------------------------------------------------------------------
                     if verbose:

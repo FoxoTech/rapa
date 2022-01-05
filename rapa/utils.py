@@ -28,17 +28,17 @@ def find_project(project: str) -> dr.Project:
     Uses datarobot.Project.get() and dr.Project.list() to test if 'project' is either an id
     or possibly a name of a project in DataRobot, then returns the project found.
 
-    ## Parameters:
+    :Parameters:
     ----------
-    project: str
-        Either a project id or a search term for project name
+        project: str
+            Either a project id or a search term for project name
 
-    ## Returns: 
+    :Returns: 
     ----------
-    datarobot.Project
-        A datarobot project object that is either the project with the id provided, or the 
-        first/only project returned by searching by project name. Returns None if the list is 
-        empty.
+        datarobot.Project
+            A datarobot project object that is either the project with the id provided, or the 
+            first/only project returned by searching by project name. Returns None if the list is 
+            empty.
     """
 
     project = str(project) # make sure the project id/name provided is a string
@@ -55,7 +55,7 @@ def find_project(project: str) -> dr.Project:
         elif len(project_list) == 1: # found one project with search, good
             return project_list[0]
         else: # more than one project was found
-            warn(f"Returning the first of multiple projects with \'{project}\': {project_list=}")
+            warn(f"Returning the first of multiple projects with \'{project}\': {project_list}")
             return project_list[0]
     
 
@@ -69,35 +69,37 @@ def get_best_model(project: dr.Project,
 
     CURRENTLY SUPPORTS METRICS WHERE HIGHER = BETTER
 
-    WARNING: Actually finding the 'best' model takes more than averageing cross validation
-    scores, and it is suggested that the 'best' model is decided and starred in DataRobot.
-    (Make sure 'starred = True' if starring the 'best' model) 
+    .. warning:: 
+        Actually finding the 'best' model takes more than averageing cross validation
+        scores, and it is suggested that the 'best' model is decided and starred in DataRobot.
+        (Make sure 'starred = True' if starring the 'best' model) 
 
-    Note: Some models may not have cross validation scores because they were not run. These
-    models are ignored by this function. Cross validate all models if each model should be 
-    considered.
+    .. note::
+        Some models may not have cross validation scores because they were not run. These
+        models are ignored by this function. Cross validate all models if each model should be 
+        considered.
 
-    ## Parameters 
+    :Parameters:
     ----------
-    project: datarobot.Project
-        The project object that will be searched for the 'best' model
+        project: datarobot.Project
+            The project object that will be searched for the 'best' model
 
-    featurelist_prefix: str, optional (default = 'RAPA Reduced to')
-        The desired featurelist prefix used to search in for models using specific
-        rapa featurelists
+        featurelist_prefix: str, optional (default = 'RAPA Reduced to')
+            The desired featurelist prefix used to search in for models using specific
+            rapa featurelists
 
-    starred: bool, optional (default = False)
-        If True, return the starred model. If there are more than one starred models,
-        then warn the user and return the 'best' one
+        starred: bool, optional (default = False)
+            If True, return the starred model. If there are more than one starred models,
+            then warn the user and return the 'best' one
 
-    metric: str, optional (default = 'AUC')
-        What model cross validation metric to use when averaging scores
+        metric: str, optional (default = 'AUC')
+            What model cross validation metric to use when averaging scores
     
-    ## Returns
+    :Returns:
     ----------
-    datarobot.Model
-        A datarobot model that is either the 'best', starred, or the 'best' of the starred models
-        from the provided datarobot project
+        datarobot.Model
+            A datarobot model that is either the 'best', starred, or the 'best' of the starred models
+            from the provided datarobot project
     """
 
     all_models = []
@@ -144,7 +146,7 @@ def get_best_model(project: dr.Project,
                 num_no_cv += 1
 
         if len(averages) == 0:
-            warn(f'There were no cross-validated models in \'{project=}\'')
+            warn(f'There were no cross-validated models in "{project}"')
             return None
         else:
             return averages[sorted(averages.keys())[-1]] # highest metric is 'best' TODO: support the other metrics
@@ -163,22 +165,23 @@ def initialize_dr_api(token_key,
                     endpoint: str = 'https://app.datarobot.com/api/v2'):
     """Initializes the DataRobot API with a pickled dictionary created by the user.
 
-    <mark>WARNING</mark>: It is advised that the user keeps the pickled dictionary in an ignored 
-    directory if using GitHub (put the file in the .gitignore)
+    .. warning:
+        It is advised that the user keeps the pickled dictionary in an ignored 
+        directory if using GitHub (put the file in the .gitignore)
 
     Accesses a file that should be a pickled dictionary. This dictionary has the API token
     as the value to the provided token_key. Ex: {token_key: 'API_TOKEN'}
 
-    ## Parameters
+    :Parameters:
     ----------
-    token_key: str
-        The API token's key in the pickled dictionary located in file_path
+        token_key: str
+            The API token's key in the pickled dictionary located in file_path
 
-    file_path: str, optional (default = 'data/dr-tokens.pkl')
-        Path to the pickled dictionary containing the API token
+        file_path: str, optional (default = 'data/dr-tokens.pkl')
+            Path to the pickled dictionary containing the API token
 
-    endpoint: str, optional (default = 'https://app.datarobot.com/api/v2')
-        The endpoint is usually the URL you would use to log into the DataRobot Web User Interface
+        endpoint: str, optional (default = 'https://app.datarobot.com/api/v2')
+            The endpoint is usually the URL you would use to log into the DataRobot Web User Interface
 
     """
     # load pickled dictionary and initialize api, catching FileNotFound, KeyError, and failed authentication warning
@@ -208,18 +211,18 @@ def get_featurelist(featurelist: str,
     the project. Then, it searches the list for id's, and if it doesn't find any,
     it searches the list again for names. Returns the first project it finds.
 
-    ## Parameters
+    :Parameters:
     ----------
-    featurelist: str
-        Either a featurelist id or a search term for featurelist name
-    
-    project: datarobot.Project
-        The project that is being searched for the featurelist
+        featurelist: str
+            Either a featurelist id or a search term for featurelist name
+        
+        project: datarobot.Project
+            The project that is being searched for the featurelist
 
-    ## Returns
+    :Returns:
     ----------
-    datarobot.Featurelist
-        The featurelist that was found. Returns None if no featurelist is found
+        datarobot.Featurelist
+            The featurelist that was found. Returns None if no featurelist is found
     """
     featurelist = str(featurelist) # cast to string just in case id is an int or something
     featurelists = project.get_featurelists()
@@ -244,30 +247,31 @@ def parsimony_performance_boxplot(project: dr.Project,
                                 split: str = 'crossValidation',
                                 featurelist_lengths: list = None):
     """Uses `seaborn`'s `boxplot` function to plot featurelist size vs performance
-    for all models that use that featurelist. # TODO warn about multiple prefixes, try to use new prefixes
+    for all models that use that featurelist prefix. There is a different boxplot for
+    each featurelist length. # TODO warn about multiple prefixes, try to use new prefixes
 
-    ## Paremeters
+    :Paremeters:
     ----------
-    project: datarobot.Project
-        Either a datarobot project, or a string of it's id or name
+        project: datarobot.Project
+            Either a datarobot project, or a string of it's id or name
 
-    featurelist_prefix: str, optional (default = 'RAPA Reduced to')
-        The desired prefix for the featurelists that will be used for plotting parsimony performance. Each featurelist
-        will start with the prefix, include a space, and then end with the number of features in that featurelist
+        featurelist_prefix: str, optional (default = 'RAPA Reduced to')
+            The desired prefix for the featurelists that will be used for plotting parsimony performance. Each featurelist
+            will start with the prefix, include a space, and then end with the number of features in that featurelist
 
-    metric: str, optional (default = 'AUC')
-        The metric used for plotting accuracy of models
+        metric: str, optional (default = 'AUC')
+            The metric used for plotting accuracy of models
 
-    split: str, optional (default = 'crossValidation')
-        What split's performance to take from. 
-        Can be: ['crossValidation', 'holdout'] TODO: i think it can be more, double check
-    
-    featurelist_lengths: list, optional (default = None)
-        A list of featurelist lengths to plot
+        split: str, optional (default = 'crossValidation')
+            What split's performance to take from. 
+            Can be: ['crossValidation', 'holdout'] TODO: i think it can be more, double check
+        
+        featurelist_lengths: list, optional (default = None)
+            A list of featurelist lengths to plot
 
-    ## Returns
+    :Returns:
     ----------
-    None TODO: return plot?
+        None TODO: return plot?
     """
     # if `project` is a string, find the project
     if type(project) is str:
@@ -314,32 +318,36 @@ def feature_performance_stackplot(project: dr.Project,
     """Utilizes `matplotlib.pyplot.stackplot` to show feature performance during 
     parsimony analysis.
 
-    ## Parameters
+    :Parameters:
     ----------
-    project: datarobot.Project
-        Either a datarobot project, or a string of it's id or name
+        project: datarobot.Project
+            Either a datarobot project, or a string of it's id or name
 
-    featurelist_prefix: str, optional (default = 'RAPA Reduced to')
-        The desired prefix for the featurelists that will be used for plotting feature performance. Each featurelist
-        will start with the prefix, include a space, and then end with the number of features in that featurelist
+        featurelist_prefix: str, optional (default = 'RAPA Reduced to')
+            The desired prefix for the featurelists that will be used for plotting feature performance. Each featurelist
+            will start with the prefix, include a space, and then end with the number of features in that featurelist
 
-    starting_featurelist: str, optional (default = None)
-        The starting featurelist used for parsimony analysis. If None, only
-        the featurelists with the desired prefix in `featurelist_prefix` will be plotted
-    
-    feature_impact_metric: str, optional (default = mean)
-        Which metric to use when finding the  most representative feature importance of all models in the featurelist
-            Options: 'median', 'mean', or 'cumulative'
+        starting_featurelist: str, optional (default = None)
+            The starting featurelist used for parsimony analysis. If None, only
+            the featurelists with the desired prefix in `featurelist_prefix` will be plotted
+        
+        feature_impact_metric: str, optional (default = mean)
+            Which metric to use when finding the  most representative feature importance of all models in the featurelist
 
-    metric: str, optional (default = 'AUC')
-        Which metric to use when finding feature importance of each model
-    
-    vlines: bool, optional (default = False)
-        Whether to add vertical lines at the featurelist lengths or not, False by default
+            Options:
+                * median
+                * mean
+                * cumulative
 
-    ## Returns
+        metric: str, optional (default = 'AUC')
+            Which metric to use when finding feature importance of each model
+        
+        vlines: bool, optional (default = False)
+            Whether to add vertical lines at the featurelist lengths or not, False by default
+
+    :Returns:
     ----------
-    None TODO: return plot?
+        None TODO: return plot?
     """
     # if `project` is a string, find the project
     if type(project) is str:

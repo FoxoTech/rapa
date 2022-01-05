@@ -2,6 +2,9 @@ from setuptools import find_packages, setup
 
 exec(open('rapa/version.py').read())
 
+with open('requirements.txt') as f:
+    req = [x.strip('\n') for x in f.readlines()]
+
 setup(
     name='rapa',
     version=__version__,
@@ -15,7 +18,7 @@ setup(
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
         'Topic :: Scientific/Engineering :: Medical Science Apps.',
         'Framework :: Jupyter',
@@ -26,15 +29,7 @@ setup(
         'Operating System :: POSIX :: Linux',
       ],
     keywords='feature reduction features datarobot robust automated parsimony analysis',
-    install_requires=[
-        'numpy',
-        'pandas',
-        'scikit-learn',
-        'matplotlib',
-        'datarobot',
-        'tqdm',
-        'seaborn',
-    ],
+    install_requires=req,
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
     test_suite='tests',

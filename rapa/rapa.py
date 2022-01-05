@@ -1,9 +1,8 @@
-from .base import RAPABase 
-from . import utils
+from . import base
 
 import datarobot as dr
 
-class RAPAClassif(RAPABase):
+class RAPAClassif(base.RAPABase):
     """
         RAPA class meant for classification problems.
     """
@@ -14,7 +13,7 @@ class RAPAClassif(RAPABase):
         self._regression = False
 
 
-class RAPARegress(RAPABase):
+class RAPARegress(base.RAPABase):
     """
         RAPA class meant for regression problems.
     """

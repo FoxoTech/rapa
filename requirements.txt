@@ -5,3 +5,7 @@ matplotlib
 datarobot
 tqdm
 seaborn
+sphinxcontrib-apidoc
+m2r
+nbsphinx
+myst-parser
