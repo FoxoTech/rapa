@@ -415,13 +415,26 @@ def feature_performance_stackplot(project: dr.Project,
     y = np.array(y)
     y = y.T
     
-    len_smallest_featurelist = min([int(x.split(' ')[-1].strip('()')) for x in df.columns])
+    featurelist_lengths = sorted([int(x.split(' ')[-1].strip('()')) for x in df.columns])[::-1] # descending list of featurelist lengths
+
+    len_smallest_featurelist = min(featurelist_lengths)
     smallest_featurelist = featurelist_prefix + ' (' + str(len_smallest_featurelist) + ')'
+
+    # if the length of the smallest featurelist is less than the number of features to label
+    # get a featurelist that has a length higher than the minimum features to label for labeling purposes
+    if len_smallest_featurelist < config.MIN_FEATURES_TO_LABEL:
+        len_smallest_featurelist = config.MIN_FEATURES_TO_LABEL
+        last_length = np.inf
+        for length in featurelist_lengths:
+            if length < len_smallest_featurelist:
+                break
+            last_length = length
+            smallest_featurelist = featurelist_prefix + ' (' + str(last_length) + ')'
 
     # unreadable list comprehension really means: get a dictionary with keys that are the old column names (features), and values with new column names (starting with underscore)
     # at least show config.MIN_FEATURES_TO_GRAPH
     # this is so that the underscored names are not shown in the legend.
-    labels = [{x:'_' + str(x)} if i > config.NUM_FEATURES_TO_GRAPH or i >= min([int(x.split(' ')[-1].strip('()')) for x in df.columns]) else {x:x} for i, x in enumerate(df.loc[:,smallest_featurelist].sort_values(ascending=False).index)]
+    labels = [{x:'_' + str(x)} if i > config.MAX_FEATURES_TO_LABEL or i >= len_smallest_featurelist else {x:x} for i, x in enumerate(df.loc[:,smallest_featurelist].sort_values(ascending=False).index)]
     l = {}
     for label in labels:
         l.update(label)

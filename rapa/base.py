@@ -167,10 +167,10 @@ class RAPABase():
     def _feature_performances_hbar(stat_feature_importances, featurelist_name, metric='', stacked=False, colormap='tab20'):
         feature_performances = pd.DataFrame(stat_feature_importances.rename(len(stat_feature_importances)))
         warnings.filterwarnings('ignore', message='The handle <BarContainer object of 1 artists>')
-        ax = feature_performances.iloc[:config.NUM_FEATURES_TO_GRAPH].T.set_axis(list(feature_performances.iloc[:config.NUM_FEATURES_TO_GRAPH].T.columns), axis=1, inplace=False).plot(kind='barh',
+        ax = feature_performances.iloc[:config.MAX_FEATURES_TO_LABEL].T.set_axis(list(feature_performances.iloc[:config.MAX_FEATURES_TO_LABEL].T.columns), axis=1, inplace=False).plot(kind='barh',
                                                                                                                                             stacked=stacked,
                                                                                                                                             figsize=(config.FIG_SIZE[0], config.FIG_SIZE[1]/2),
-                                                                                                                                            title=f'{min([config.NUM_FEATURES_TO_GRAPH, len(feature_performances)])} {metric} Impact Normalized Feature Performances\nFeaturelist: {featurelist_name}',
+                                                                                                                                            title=f'{min([config.MAX_FEATURES_TO_LABEL, len(feature_performances)])} {metric} Impact Normalized Feature Performances\nFeaturelist: {featurelist_name}',
                                                                                                                                             xlabel='Featurelist Length',
                                                                                                                                             ylabel='Normalized Impact of Features',
                                                                                                                                             colormap=colormap)
