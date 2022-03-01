@@ -243,6 +243,7 @@ def get_featurelist(featurelist: str,
     
 def parsimony_performance_boxplot(project: dr.Project, 
                                 featurelist_prefix: str = 'RAPA Reduced to',
+                                starting_featurelist: str = None,
                                 metric: str = 'AUC',
                                 split: str = 'crossValidation',
                                 featurelist_lengths: list = None):
@@ -258,6 +259,10 @@ def parsimony_performance_boxplot(project: dr.Project,
         featurelist_prefix: str, optional (default = 'RAPA Reduced to')
             The desired prefix for the featurelists that will be used for plotting parsimony performance. Each featurelist
             will start with the prefix, include a space, and then end with the number of features in that featurelist
+
+        starting_featurelist: str, optional (default = None)
+            The starting featurelist used for parsimony analysis. If None, only
+            the featurelists with the desired prefix in `featurelist_prefix` will be plotted
 
         metric: str, optional (default = 'AUC')
             The metric used for plotting accuracy of models
@@ -277,18 +282,30 @@ def parsimony_performance_boxplot(project: dr.Project,
     if type(project) is str:
         project = find_project(project)
 
+
     datarobot_project_models = project.get_models() # get all the models in the provided project
-    RAPA_model_featurelists = []
+
+    if starting_featurelist:
+        if type(starting_featurelist) == str:
+            starting_featurelist = get_featurelist(starting_featurelist, project)
+        num_starting_featurelist_features = len(starting_featurelist.features)
+
+
     featurelist_performances = defaultdict(list)
     for model in datarobot_project_models: # for every model, if the model has the prefix, then add it's performance
         if model.featurelist_name != None and featurelist_prefix in model.featurelist_name:
-            RAPA_model_featurelists.append(model.featurelist_name)
             num_features = int(model.featurelist_name.split(' ')[-1].strip('()')) # parse the number of features from the featurelist name
             if model.metrics[metric][split] != None: # if there is no feature impact for the model/split, don't add the metric
                 if featurelist_lengths and num_features in featurelist_lengths:
                     featurelist_performances[num_features].append(model.metrics[metric][split])
                 elif not featurelist_lengths:
                     featurelist_performances[num_features].append(model.metrics[metric][split])
+        elif starting_featurelist and model.featurelist_id == starting_featurelist.id: # starting featurelist
+            if model.metrics[metric][split] != None: # if there is no feature impact for the model/split, don't add the metric
+                if featurelist_lengths and num_starting_featurelist_features in featurelist_lengths:
+                    featurelist_performances[num_starting_featurelist_features].append(model.metrics[metric][split])
+                elif not featurelist_lengths:
+                    featurelist_performances[num_starting_featurelist_features].append(model.metrics[metric][split])
     
     # Add Nones so that the arrays are the same length
     last = 0
@@ -353,8 +370,9 @@ def feature_performance_stackplot(project: dr.Project,
     if type(project) is str:
         project = find_project(project)
     
-    if type(starting_featurelist) == str:
-        starting_featurelist = get_featurelist(starting_featurelist, project)
+    if starting_featurelist:
+        if type(starting_featurelist) == str:
+            starting_featurelist = get_featurelist(starting_featurelist, project)
     
     datarobot_project_models = project.get_models() # get all the models in the provided project
 

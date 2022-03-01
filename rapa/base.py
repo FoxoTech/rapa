@@ -689,7 +689,8 @@ class RAPABase():
                         temp_start = time.time()
                         pbar.set_description(f'{pbar_prefix}Graphing model performance boxplots')
                         utils.parsimony_performance_boxplot(project, 
-                                                            featurelist_prefix=featurelist_prefix)
+                                                            featurelist_prefix=featurelist_prefix,
+                                                            starting_featurelist=starting_featurelist)
                         plt.show()
                         plt.close()
                         print(f'Model Performance Boxplot: {time.time()-temp_start:.{config.TIME_DECIMALS}f}s')
