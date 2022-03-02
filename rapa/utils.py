@@ -243,6 +243,7 @@ def get_featurelist(featurelist: str,
     
 def parsimony_performance_boxplot(project: dr.Project, 
                                 featurelist_prefix: str = 'RAPA Reduced to',
+                                starting_featurelist: str = None,
                                 metric: str = 'AUC',
                                 split: str = 'crossValidation',
                                 featurelist_lengths: list = None):
@@ -258,6 +259,10 @@ def parsimony_performance_boxplot(project: dr.Project,
         featurelist_prefix: str, optional (default = 'RAPA Reduced to')
             The desired prefix for the featurelists that will be used for plotting parsimony performance. Each featurelist
             will start with the prefix, include a space, and then end with the number of features in that featurelist
+
+        starting_featurelist: str, optional (default = None)
+            The starting featurelist used for parsimony analysis. If None, only
+            the featurelists with the desired prefix in `featurelist_prefix` will be plotted
 
         metric: str, optional (default = 'AUC')
             The metric used for plotting accuracy of models
@@ -277,18 +282,30 @@ def parsimony_performance_boxplot(project: dr.Project,
     if type(project) is str:
         project = find_project(project)
 
+
     datarobot_project_models = project.get_models() # get all the models in the provided project
-    RAPA_model_featurelists = []
+
+    if starting_featurelist:
+        if type(starting_featurelist) == str:
+            starting_featurelist = get_featurelist(starting_featurelist, project)
+        num_starting_featurelist_features = len(starting_featurelist.features)
+
+
     featurelist_performances = defaultdict(list)
     for model in datarobot_project_models: # for every model, if the model has the prefix, then add it's performance
         if model.featurelist_name != None and featurelist_prefix in model.featurelist_name:
-            RAPA_model_featurelists.append(model.featurelist_name)
             num_features = int(model.featurelist_name.split(' ')[-1].strip('()')) # parse the number of features from the featurelist name
             if model.metrics[metric][split] != None: # if there is no feature impact for the model/split, don't add the metric
                 if featurelist_lengths and num_features in featurelist_lengths:
                     featurelist_performances[num_features].append(model.metrics[metric][split])
                 elif not featurelist_lengths:
                     featurelist_performances[num_features].append(model.metrics[metric][split])
+        elif starting_featurelist and model.featurelist_id == starting_featurelist.id: # starting featurelist
+            if model.metrics[metric][split] != None: # if there is no feature impact for the model/split, don't add the metric
+                if featurelist_lengths and num_starting_featurelist_features in featurelist_lengths:
+                    featurelist_performances[num_starting_featurelist_features].append(model.metrics[metric][split])
+                elif not featurelist_lengths:
+                    featurelist_performances[num_starting_featurelist_features].append(model.metrics[metric][split])
     
     # Add Nones so that the arrays are the same length
     last = 0
@@ -353,8 +370,9 @@ def feature_performance_stackplot(project: dr.Project,
     if type(project) is str:
         project = find_project(project)
     
-    if type(starting_featurelist) == str:
-        starting_featurelist = get_featurelist(starting_featurelist, project)
+    if starting_featurelist:
+        if type(starting_featurelist) == str:
+            starting_featurelist = get_featurelist(starting_featurelist, project)
     
     datarobot_project_models = project.get_models() # get all the models in the provided project
 
@@ -364,14 +382,14 @@ def feature_performance_stackplot(project: dr.Project,
             if model.featurelist_name != None and (model.featurelist_name.startswith(featurelist_prefix) or model.featurelist_id == starting_featurelist.id): # if the model uses the starting featurelist/featurelist prefix
                 if model.metrics[metric]['crossValidation'] != None:
                     if model.featurelist_name in all_feature_importances.keys():
-                        for x in model.get_feature_impact():
+                        for x in model.get_or_request_feature_impact():
                             if x['featureName'] in all_feature_importances[model.featurelist_name].keys():
                                 all_feature_importances[model.featurelist_name][x['featureName']].append(x['impactNormalized'])
                             else:
                                 all_feature_importances[model.featurelist_name][x['featureName']] = [x['impactNormalized']]
                     else:
                         all_feature_importances[model.featurelist_name] = {} 
-                        for x in model.get_feature_impact():
+                        for x in model.get_or_request_feature_impact():
                             all_feature_importances[model.featurelist_name][x['featureName']] = [x['impactNormalized']]
     else: # same as if, but without starting featurelist 
         all_feature_importances = {}
@@ -379,14 +397,14 @@ def feature_performance_stackplot(project: dr.Project,
             if model.featurelist_name.startswith(featurelist_prefix): # if the model's featurelist starts with the featurelist prefix
                 if model.metrics[metric]['crossValidation'] != None:
                     if model.featurelist_name in all_feature_importances.keys():
-                        for x in model.get_feature_impact():
+                        for x in model.get_or_request_feature_impact():
                             if x['featureName'] in all_feature_importances[model.featurelist_name].keys():
                                 all_feature_importances[model.featurelist_name][x['featureName']].append(x['impactNormalized'])
                             else:
                                 all_feature_importances[model.featurelist_name][x['featureName']] = [x['impactNormalized']]
                     else:
                         all_feature_importances[model.featurelist_name] = {} 
-                        for x in model.get_feature_impact():
+                        for x in model.get_or_request_feature_impact():
                             all_feature_importances[model.featurelist_name][x['featureName']] = [x['impactNormalized']]
 
     for featurelist_name in all_feature_importances.keys():
@@ -415,13 +433,26 @@ def feature_performance_stackplot(project: dr.Project,
     y = np.array(y)
     y = y.T
     
-    len_smallest_featurelist = min([int(x.split(' ')[-1].strip('()')) for x in df.columns])
+    featurelist_lengths = sorted([int(x.split(' ')[-1].strip('()')) for x in df.columns])[::-1] # descending list of featurelist lengths
+
+    len_smallest_featurelist = min(featurelist_lengths)
     smallest_featurelist = featurelist_prefix + ' (' + str(len_smallest_featurelist) + ')'
+
+    # if the length of the smallest featurelist is less than the number of features to label
+    # get a featurelist that has a length higher than the minimum features to label for labeling purposes
+    if len_smallest_featurelist < config.MIN_FEATURES_TO_LABEL:
+        len_smallest_featurelist = config.MIN_FEATURES_TO_LABEL
+        last_length = np.inf
+        for length in featurelist_lengths:
+            if length < len_smallest_featurelist:
+                break
+            last_length = length
+            smallest_featurelist = featurelist_prefix + ' (' + str(last_length) + ')'
 
     # unreadable list comprehension really means: get a dictionary with keys that are the old column names (features), and values with new column names (starting with underscore)
     # at least show config.MIN_FEATURES_TO_GRAPH
     # this is so that the underscored names are not shown in the legend.
-    labels = [{x:'_' + str(x)} if i > config.NUM_FEATURES_TO_GRAPH or i >= min([int(x.split(' ')[-1].strip('()')) for x in df.columns]) else {x:x} for i, x in enumerate(df.loc[:,smallest_featurelist].sort_values(ascending=False).index)]
+    labels = [{x:'_' + str(x)} if i > config.MAX_FEATURES_TO_LABEL or i >= len_smallest_featurelist else {x:x} for i, x in enumerate(df.loc[:,smallest_featurelist].sort_values(ascending=False).index)]
     l = {}
     for label in labels:
         l.update(label)

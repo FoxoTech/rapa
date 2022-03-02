@@ -20,6 +20,7 @@ from statistics import stdev
 from math import ceil
 
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 import datarobot as dr
 
@@ -167,15 +168,12 @@ class RAPABase():
     def _feature_performances_hbar(stat_feature_importances, featurelist_name, metric='', stacked=False, colormap='tab20'):
         feature_performances = pd.DataFrame(stat_feature_importances.rename(len(stat_feature_importances)))
         warnings.filterwarnings('ignore', message='The handle <BarContainer object of 1 artists>')
-        ax = feature_performances.iloc[:config.NUM_FEATURES_TO_GRAPH].T.set_axis(list(feature_performances.iloc[:config.NUM_FEATURES_TO_GRAPH].T.columns), axis=1, inplace=False).plot(kind='barh',
-                                                                                                                                            stacked=stacked,
-                                                                                                                                            figsize=(config.FIG_SIZE[0], config.FIG_SIZE[1]/2),
-                                                                                                                                            title=f'{min([config.NUM_FEATURES_TO_GRAPH, len(feature_performances)])} {metric} Impact Normalized Feature Performances\nFeaturelist: {featurelist_name}',
-                                                                                                                                            xlabel='Featurelist Length',
-                                                                                                                                            ylabel='Normalized Impact of Features',
-                                                                                                                                            colormap=colormap)
-        ax.set(xlabel='Normalized Impact of Features')
+        feature_performances_to_plot = feature_performances.iloc[:config.MAX_FEATURES_TO_LABEL].T.set_axis(list(feature_performances.iloc[:config.MAX_FEATURES_TO_LABEL].T.columns), axis=1, inplace=False)
+        plt.figure(figsize=(config.FIG_SIZE[0], config.FIG_SIZE[1]/2))
+        ax = sns.barplot(data=feature_performances_to_plot, orient='h', palette=colormap)
+        ax.set(xlabel='Normalized Impact of Features', title=f'{min([config.MAX_FEATURES_TO_LABEL, len(feature_performances)])} {metric} Impact Normalized Feature Performances\nFeaturelist: {featurelist_name}', ylabel='Features')
         warnings.filterwarnings('default')
+        plt.show()
         return None
 
 
@@ -575,7 +573,7 @@ class RAPABase():
         for model in datarobot_project_models:
             if model.featurelist_id == starting_featurelist.id: # request feature impact for starting featurelist models
                 if model.metrics[metric]['crossValidation'] != None:
-                    all_feature_importances.extend(model.get_feature_impact())
+                    all_feature_importances.extend(model.get_or_request_feature_impact())
 
         # sort by features by feature importance statistic 
         stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized']
@@ -658,7 +656,7 @@ class RAPABase():
                 while(len(all_feature_importances) == 0):
                     for model in datarobot_project_models:
                         if model.featurelist_id == reduced_featurelist.id and model.metrics[metric]['crossValidation'] != None:
-                            all_feature_importances.extend(model.get_feature_impact())
+                            all_feature_importances.extend(model.get_or_request_feature_impact())
                     time.sleep(5)
                 tqdm.write(f'Waiting for DataRobot: {time.time()-temp_start:.{config.TIME_DECIMALS}f}s')
 
@@ -689,7 +687,8 @@ class RAPABase():
                         temp_start = time.time()
                         pbar.set_description(f'{pbar_prefix}Graphing model performance boxplots')
                         utils.parsimony_performance_boxplot(project, 
-                                                            featurelist_prefix=featurelist_prefix)
+                                                            featurelist_prefix=featurelist_prefix,
+                                                            starting_featurelist=starting_featurelist)
                         plt.show()
                         plt.close()
                         print(f'Model Performance Boxplot: {time.time()-temp_start:.{config.TIME_DECIMALS}f}s')
