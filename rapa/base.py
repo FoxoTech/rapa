@@ -573,7 +573,7 @@ class RAPABase():
         for model in datarobot_project_models:
             if model.featurelist_id == starting_featurelist.id: # request feature impact for starting featurelist models
                 if model.metrics[metric]['crossValidation'] != None:
-                    all_feature_importances.extend(model.get_feature_impact())
+                    all_feature_importances.extend(model.get_or_request_feature_impact())
 
         # sort by features by feature importance statistic 
         stat_feature_importances = pd.DataFrame(all_feature_importances).groupby('featureName')['impactNormalized']
@@ -656,7 +656,7 @@ class RAPABase():
                 while(len(all_feature_importances) == 0):
                     for model in datarobot_project_models:
                         if model.featurelist_id == reduced_featurelist.id and model.metrics[metric]['crossValidation'] != None:
-                            all_feature_importances.extend(model.get_feature_impact())
+                            all_feature_importances.extend(model.get_or_request_feature_impact())
                     time.sleep(5)
                 tqdm.write(f'Waiting for DataRobot: {time.time()-temp_start:.{config.TIME_DECIMALS}f}s')
 

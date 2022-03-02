@@ -382,14 +382,14 @@ def feature_performance_stackplot(project: dr.Project,
             if model.featurelist_name != None and (model.featurelist_name.startswith(featurelist_prefix) or model.featurelist_id == starting_featurelist.id): # if the model uses the starting featurelist/featurelist prefix
                 if model.metrics[metric]['crossValidation'] != None:
                     if model.featurelist_name in all_feature_importances.keys():
-                        for x in model.get_feature_impact():
+                        for x in model.get_or_request_feature_impact():
                             if x['featureName'] in all_feature_importances[model.featurelist_name].keys():
                                 all_feature_importances[model.featurelist_name][x['featureName']].append(x['impactNormalized'])
                             else:
                                 all_feature_importances[model.featurelist_name][x['featureName']] = [x['impactNormalized']]
                     else:
                         all_feature_importances[model.featurelist_name] = {} 
-                        for x in model.get_feature_impact():
+                        for x in model.get_or_request_feature_impact():
                             all_feature_importances[model.featurelist_name][x['featureName']] = [x['impactNormalized']]
     else: # same as if, but without starting featurelist 
         all_feature_importances = {}
@@ -397,14 +397,14 @@ def feature_performance_stackplot(project: dr.Project,
             if model.featurelist_name.startswith(featurelist_prefix): # if the model's featurelist starts with the featurelist prefix
                 if model.metrics[metric]['crossValidation'] != None:
                     if model.featurelist_name in all_feature_importances.keys():
-                        for x in model.get_feature_impact():
+                        for x in model.get_or_request_feature_impact():
                             if x['featureName'] in all_feature_importances[model.featurelist_name].keys():
                                 all_feature_importances[model.featurelist_name][x['featureName']].append(x['impactNormalized'])
                             else:
                                 all_feature_importances[model.featurelist_name][x['featureName']] = [x['impactNormalized']]
                     else:
                         all_feature_importances[model.featurelist_name] = {} 
-                        for x in model.get_feature_impact():
+                        for x in model.get_or_request_feature_impact():
                             all_feature_importances[model.featurelist_name][x['featureName']] = [x['impactNormalized']]
 
     for featurelist_name in all_feature_importances.keys():
