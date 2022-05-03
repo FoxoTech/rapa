@@ -2,7 +2,7 @@
 
 `RAPA` provides a robust, freely usable and shareable tool for creating and analyzing more accurate machine learning (ML) models with fewer features in Python. View documentation on [ReadTheDocs](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/).
 
-[![ReadTheDocs](https://readthedocs.com/projects/life-epigenetics-rapa/badge/?version=latest)](https://readthedocs.com/projects/life-epigenetics-rapa/) [![pypi](https://img.shields.io/pypi/v/rapa.svg)](https://pypi.org/project/rapa/#data)
+[![ReadTheDocs](https://readthedocs.com/projects/life-epigenetics-rapa/badge/?version=latest)](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/) [![pypi](https://img.shields.io/pypi/v/rapa.svg)](https://pypi.org/project/rapa/#data)
 
 RAPA will initially be developed on top of DataRobot's Python API to use DataRobot as a "model-running engine." In the RAPA MVP, we will provide two primary features:
 
