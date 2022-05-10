@@ -30,7 +30,7 @@ rapa_classif = rapa.rapa.RAPAClassif()
 # then provide the original data for feature selection
 sdf = rapa_classif.create_submittable_dataframe(input_data_df=input, 
                                                 target_name='target_column', 
-                                                n_features=2000)v 
+                                                n_features=2000)
 ```
 
 ---
