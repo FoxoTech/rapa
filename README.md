@@ -8,10 +8,15 @@ RAPA is currently developed on top of DataRobot's Python API to use DataRobot as
 
 Currently, RAPA provides two primary functions:
 
-1. Initial feature filtering to reduce a feature list down to a size that DataRobot can receive as input.
+[1. Initial feature filtering](#initial_feature_filtering) to reduce a feature list down to a size that DataRobot can receive as input.
 
-2. Automated parsimony analysis using feature importance metrics directly tied to the feature's impact on accurate models (permutation importance). 
+[2. Automated parsimony analysis](#automated_parsimony_analysis) using feature importance metrics directly tied to the feature's impact on accurate models (permutation importance). 
 
+<a name='initial_feature_filtering'></a>
+## Initial Feature Filtering
+
+<a name='automated_parsimony_analysis'></a>
+## Automated Parsimony Analysis
 
 To present to the user the trade-off between the size of Feature List and the model performance for each Feature List, a series of boxplots can be plotted `rapa.utils.parsimony_performance_boxplot`.
 
