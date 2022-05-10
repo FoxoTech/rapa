@@ -28,13 +28,15 @@ For feature selection, RAPA uses `sklearn`'s ```f_classif``` or ```f_regression`
 rapa_classif = rapa.rapa.RAPAClassif()
 
 # then provide the original data for feature selection
-submittable_dataframe = rapa_classif.create_submittable_dataframe(input_data_df=input_data, target_name='target', n_features=2000)
+sdf = rapa_classif.create_submittable_dataframe(input_data_df=input, 
+                                                target_name='target_column', 
+                                                n_features=2000)v 
 ```
 
 ---
-**NOTE**
+### **NOTE**
 
-The provided ```input_data_df``` should have all of the features as well as the target as columns, with samples as the index.
+When calling ```create_submittable_dataframe```, the provided ```input_data_df``` should have all of the features as well as the target as columns, and samples as the index.
 
 If the number of features is reduced, then there should be no missing values.
 
