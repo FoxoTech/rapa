@@ -34,7 +34,7 @@ sdf = rapa_classif.create_submittable_dataframe(input_data_df=input,
 ```
 
 ---
-### <mark>**NOTE**</mark>
+### ==**NOTE**==
 
 When calling ```create_submittable_dataframe```, the provided ```input_data_df``` should have all of the features as well as the target as columns, and samples as the index.
 
