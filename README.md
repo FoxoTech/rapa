@@ -13,14 +13,58 @@ Majority of `rapa`'s utility comes from the DataRobot auto-ML platform. To utili
 <div align="center">
   <p>First, log in and find the developer tools tab.</p>
   <img src="https://github.com/FoxoTech/rapa/blob/main/docs/profile_pull_down.png" alt="profile_pulldown" width="200"/>
+  <br/>
 </div>
   <div align="center">
   <p>Then create an API key for access to the API with Python.</p>
   <img src="https://github.com/FoxoTech/rapa/blob/main/docs/create_api_key.png" alt="api_key" width="300"/>
+  <br/>
 </div>
+---
+**NOTE**
+
+**This API key lets anyone who has it access your DataRobot projects, so never share it with anyone.**
+
+To avoid sharing your API accidentally by uploading a notebook to github, it is suggested to use the `rapa` function to read in a pickled dictionary for the API key. This way, the key is not provided in any code.
+---
+Once having obtained an API key, use `rapa` or `datarobot` to initialize the API connection. 
+
+Using `rapa`, first create the pickled dictionary containting an API key.
+```python
+# DO NOT UPLOAD THIS CODE WITH THE API KEY FILLED OUT 
+# save a pickled dictionary for datarobot api initialization in a new folder named 'data'
+import os
+import pickle
+
+api_dict = {'tutorial':'APIKEYHERE'}
+if 'data' in os.listdir('.'):
+    print('data folder already exists, skipping folder creation...')
+else:
+    print('Creating data folder in the current directory.')
+    os.mkdir('data')
+
+if 'dr-tokens.pkl' in os.listdir('data'):
+    print('dr-tokens.pkl already exists.')
+else:
+    with open('data/dr-tokens.pkl', 'wb') as handle:
+        pickle.dump(api_dict, handle)
+```
+
+Then use `rapa` to initialize the API connection!
+```python
+# Use the pickled dictionary to initialize the DataRobot API
+import rapa
+
+rapa.utils.initialize_dr_api('tutorial')
+```
+
+[`rapa.utils.initialize_dr_api`](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/_modules/rapa/utils.html#initialize_dr_api) takes 3 arguments: token_key - the dictionary key used to store the API key as a value, file_path - the pickled dataframe file path (default: data/dr-tokens.pkl), endpoint - and the endpoint (default:https://app.datarobot.com/api/v2).
 
 
-Currently, `rapa` provides two primary functions:
+
+## Primary Features
+
+Currently, `rapa` provides two primary features:
 
   [1. Initial feature filtering](#initial_feature_filtering) to reduce a feature list down to a size that DataRobot can receive as input.
 
