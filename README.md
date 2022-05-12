@@ -14,7 +14,7 @@ Majority of `rapa`'s utility comes from the DataRobot auto-ML platform. To utili
   <a width="200">
     <img src="https://github.com/FoxoTech/rapa/blob/main/docs/profile_pull_down.png" alt="profile_pulldown" width="200"/>
   </a>
-  <a width="300">
+  <a width="300", valign="center">
     <img src="https://github.com/FoxoTech/rapa/blob/main/docs/create_api_key.png" alt="api_key" width="300"/>
   </a>
 </p>
