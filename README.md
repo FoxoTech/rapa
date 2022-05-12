@@ -10,8 +10,7 @@
 
 ### Initializing the DataRobot API
 Majority of `rapa`'s utility comes from the DataRobot auto-ML platform. To utilize DataRobot through Python, an API key is required. Acquire an API key from [app.datarobot.com](app.datarobot.com) after logging into an account. [(More information about DataRobot's API keys)](https://docs.datarobot.com/en/docs/api/api-quickstart/api-qs.html)
-![profile_pulldown](https://github.com/FoxoTech/rapa/blob/main/docs/profile_pull_down.png)
-![api_key](https://github.com/FoxoTech/rapa/blob/main/docs/create_api_key.png)
+![profile_pulldown](https://github.com/FoxoTech/rapa/blob/main/docs/profile_pull_down.png) ![api_key](https://github.com/FoxoTech/rapa/blob/main/docs/create_api_key.png)
 
 Currently, `rapa` provides two primary functions:
 
