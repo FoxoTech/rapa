@@ -1,17 +1,25 @@
 # Robust Automated Parsimony Analysis (RAPA)
 
-`RAPA` provides a robust, freely usable and shareable tool for creating and analyzing more accurate machine learning (ML) models with fewer features in Python. View documentation on [ReadTheDocs](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/).
+`rapa` provides a robust, freely usable and shareable tool for creating and analyzing more accurate machine learning (ML) models with fewer features in Python. View documentation on [ReadTheDocs](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/).
 
 [![ReadTheDocs](https://readthedocs.com/projects/life-epigenetics-rapa/badge/?version=latest)](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/) [![pypi](https://img.shields.io/pypi/v/rapa.svg)](https://pypi.org/project/rapa/#data)
 
-RAPA is currently developed on top of DataRobot's Python API to use DataRobot as a "model-running engine", with plans to include open source software such as `scikit-learn`, `tensorflow`, or `pytorch` in the future. [Install using pip!](#installation)
+`rapa` is currently developed on top of DataRobot's Python API to use DataRobot as a "model-running engine", with plans to include open source software such as `scikit-learn`, `tensorflow`, or `pytorch` in the future. [Install using pip!](#installation)
 
 ## Getting Started
 
 ### Initializing the DataRobot API
+Majority of `rapa`'s utility comes from the DataRobot auto-ML platform. To utilize DataRobot through Python, an API key is required. Acquire an API key from [app.datarobot.com](app.datarobot.com) after logging into an account. [(More information about DataRobot's API keys)](https://docs.datarobot.com/en/docs/api/api-quickstart/api-qs.html)
+<p align="center">
+  <a width="200">
+    <img src="https://github.com/FoxoTech/rapa/blob/main/docs/profile_pull_down.png" alt="profile_pulldown" width="200"/>
+  </a>
+  <a width="300", valign="center">
+    <img src="https://github.com/FoxoTech/rapa/blob/main/docs/create_api_key.png" alt="api_key" width="300"/>
+  </a>
+</p>
 
-
-Currently, RAPA provides two primary functions:
+Currently, `rapa` provides two primary functions:
 
   [1. Initial feature filtering](#initial_feature_filtering) to reduce a feature list down to a size that DataRobot can receive as input.
 
@@ -21,7 +29,7 @@ Currently, RAPA provides two primary functions:
 ## Initial Feature Filtering
 Automated machine learning is easily applicable to samples with fewer features, as the time and resources required reduces significantly as the number of features decreases. Additionally, DataRobot's automated ML platform only accepts projects that have up to 20,000 features per sample. 
 
-For feature selection, RAPA uses `sklearn`'s ```f_classif``` or ```f_regression``` to reduce the number of features. This provides an ANOVA F-statistic for each sample, which is then used to select the features with the highest F-statistics.
+For feature selection, `rapa` uses `sklearn`'s ```f_classif``` or ```f_regression``` to reduce the number of features. This provides an ANOVA F-statistic for each sample, which is then used to select the features with the highest F-statistics.
 
 ```python
 # first, create a rapa classification object
@@ -34,7 +42,7 @@ sdf = rapa_classif.create_submittable_dataframe(input_data_df=input,
 ```
 
 ---
-### ==**NOTE**==
+**NOTE**
 
 When calling ```create_submittable_dataframe```, the provided ```input_data_df``` should have all of the features as well as the target as columns, and samples as the index.
 
@@ -56,4 +64,4 @@ Although the current implementation of these features will be based on basic tec
 ```pip install rapa```
 
 
-A tutorial for using `RAPA` with DataRobot is currently being demonstrated in [general_tutorial.ipynb](https://github.com/FoxoTech/rapa/blob/main/tutorials/general_tutorial.ipynb). 
+A tutorial for using `rapa` with DataRobot is currently being demonstrated in [general_tutorial.ipynb](https://github.com/FoxoTech/rapa/blob/main/tutorials/general_tutorial.ipynb). 
