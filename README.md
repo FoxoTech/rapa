@@ -30,6 +30,8 @@ Majority of `rapa`'s utility comes from the DataRobot auto-ML platform. To utili
 
 To avoid sharing your API accidentally by uploading a notebook to github, it is suggested to use the `rapa` function to read in a pickled dictionary for the API key. This way, the key is not provided in any code.
 ---
+
+
 Once having obtained an API key, use `rapa` or `datarobot` to initialize the API connection. 
 
 Using `rapa`, first create the pickled dictionary containting an API key.
