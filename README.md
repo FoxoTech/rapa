@@ -7,12 +7,20 @@
 `rapa` is currently developed on top of DataRobot's Python API to use DataRobot as a "model-running engine", with plans to include open source software such as `scikit-learn`, `tensorflow`, or `pytorch` in the future. [Install using pip!](#installation)
 
 <details open>
-<summary>## Contents</summary>
+<summary>Contents</summary>
 <br>
-Well, you asked for it!
+* [Getting Started](#getting_started)
+* [Primary Features](#primary_features)
+  * [Initial Feature Filtering](#initial_feature_filtering)
+  * [Automated Parsimony Analysis](#automated_parsimony_analysis)
 </details>
 
+<a name='getting_started'></a>
 ## Getting Started
+
+<a name='installation'></a>
+### Installation
+```pip install rapa```
 
 ### Initializing the DataRobot API
 Majority of `rapa`'s utility comes from the DataRobot auto-ML platform. To utilize DataRobot through Python, an API key is required. Acquire an API key from [app.datarobot.com](app.datarobot.com) after logging into an account. [(More information about DataRobot's API keys)](https://docs.datarobot.com/en/docs/api/api-quickstart/api-qs.html)
@@ -73,7 +81,7 @@ rapa.utils.initialize_dr_api('tutorial')
 [`rapa.utils.initialize_dr_api`](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/_modules/rapa/utils.html#initialize_dr_api) takes 3 arguments: token_key - the dictionary key used to store the API key as a value, file_path - the pickled dataframe file path (default: data/dr-tokens.pkl), endpoint - and the endpoint (default:https://app.datarobot.com/api/v2).
 
 
-
+<a name='primary_features'></a>
 ## Primary Features
 
 Currently, `rapa` provides two primary features:
@@ -114,10 +122,6 @@ To present to the user the trade-off between the size of Feature List and the mo
 
 Although the current implementation of these features will be based on basic techniques such as linear feature filters and recursive feature elimination, we plan to rapidly improve these features by integrating state-of-the-art techniques from the academic literature.
 
-
-<a name='installation'></a>
-## Installation
-```pip install rapa```
 
 
 A tutorial for using `rapa` with DataRobot is currently being demonstrated in [general_tutorial.ipynb](https://github.com/FoxoTech/rapa/blob/main/tutorials/general_tutorial.ipynb). 
