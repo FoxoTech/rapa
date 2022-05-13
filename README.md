@@ -6,10 +6,8 @@
 
 `rapa` is currently developed on top of DataRobot's Python API to use DataRobot as a "model-running engine", with plans to include open source software such as `scikit-learn`, `tensorflow`, or `pytorch` in the future. [Install using pip!](#installation)
 
-# Contents
-
 <details open>
-<summary>Contents</summary>
+## <summary>Contents</summary>
 <br>
 Well, you asked for it!
 </details>
