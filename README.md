@@ -9,10 +9,14 @@
 <details open>
 <summary>Contents</summary>
 <br>
+ 
+ 
 * [Getting Started](#getting_started)
 * [Primary Features](#primary_features)
   * [Initial Feature Filtering](#initial_feature_filtering)
   * [Automated Parsimony Analysis](#automated_parsimony_analysis)
+ 
+ 
 </details>
 
 <a name='getting_started'></a>
