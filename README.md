@@ -24,7 +24,9 @@
 
 <a name='installation'></a>
 ### Installation
-```pip install rapa```
+```
+pip install rapa
+```
 
 ### Initializing the DataRobot API
 Majority of `rapa`'s utility comes from the DataRobot auto-ML platform. To utilize DataRobot through Python, an API key is required. Acquire an API key from [app.datarobot.com](app.datarobot.com) after logging into an account. [(More information about DataRobot's API keys)](https://docs.datarobot.com/en/docs/api/api-quickstart/api-qs.html)
