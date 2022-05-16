@@ -7,7 +7,7 @@
 `rapa` is currently developed on top of DataRobot's Python API to use DataRobot as a "model-running engine", with plans to include open source software such as `scikit-learn`, `tensorflow`, or `pytorch` in the future. [Install using pip!](#installation)
 
 <details open>
- <summary>## Contents</summary>
+ <summary>Contents</summary>
 <br>
  
  
@@ -123,6 +123,20 @@ If the number of features is reduced, then there should be no missing values.
 
 <a name='automated_parsimony_analysis'></a>
 ## Automated Parsimony Analysis
+To start automated parsimonious analysis using Datarobot, a DataRobot project with a target and uploaded data must already be created.
+
+[1. Use an existing project](#existing_project)
+[2. Create a new project using `rapa`](#new_project_rapa)
+
+<a name='existing_project'></a>
+### 1 - Use a previously created DataRobot project:
+...
+
+<a name='new_project_rapa'></a>
+### 2 - Create and submit data for a new DataRobot project using `rapa`:
+...
+
+Then, ...
 
 To present to the user the trade-off between the size of Feature List and the model performance for each Feature List, a series of boxplots can be plotted `rapa.utils.parsimony_performance_boxplot`.
 
