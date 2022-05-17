@@ -44,8 +44,8 @@ Majority of `rapa`'s utility comes from the DataRobot auto-ML platform. To utili
 
 
 ---
-
-#### **NOTE**
+<details open>
+ <summary>NOTE</summary>
 
 **This API key lets anyone who has it access your DataRobot projects, so never share it with anyone.**
 
@@ -113,12 +113,14 @@ sdf = rapa_classif.create_submittable_dataframe(input_data_df=input,
 ```
 
 ---
-
-#### **NOTE**
+<details open>
+ <summary>NOTE</summary>
 
 When calling ```create_submittable_dataframe```, the provided ```input_data_df``` should have all of the features as well as the target as columns, and samples as the index.
 
 If the number of features is reduced, then there should be no missing values.
+
+</details>
 
 ---
 
@@ -186,8 +188,8 @@ sub_df = bc_classification.create_submittable_dataframe(breast_cancer_df, target
 ```
 
 ---
-
-#### **NOTE**
+<details open>
+ <summary>NOTE</summary>
 
 `rapa`'s `create_submittable_dataframe` takes the number of features to initially filter to.
 
@@ -195,6 +197,9 @@ If filtering features, either the `sklearn` function [`sklearn.feature_selection
 
 Additionally, `create_submittable_dataframe` can take a random state as an argument. When changing the random state, the features that are filtered can sometimes change drastically. This is because the average ANOVA F score over the cross-validation folds is calculated for selecting the features, and the random state changes which samples are in each cross-validation fold.
 
+ </details>
+ 
+ 
 ---
 
 * Finally, submit the 'submittable dataframe' to DataRobot as a project
