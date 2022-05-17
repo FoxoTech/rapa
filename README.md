@@ -210,9 +210,7 @@ project = depression_classification.submit_datarobot_project(input_data_df=sub_d
 
 This will run DataRobot's autopilot feature on the data submitted.
 
-<br>
- 
- 
+</details>
 ---
 
 Then, ...
