@@ -54,7 +54,7 @@ To avoid sharing your API accidentally by uploading a notebook to github, it is 
 ---
 
 Once having obtained an API key, use `rapa` or `datarobot` to initialize the API connection. 
-
+<a name='initialize_datarobot'></a>
 Using `rapa`, first create the pickled dictionary containting an API key.
 ```python
 # DO NOT UPLOAD THIS CODE WITH THE API KEY FILLED OUT 
@@ -113,7 +113,8 @@ sdf = rapa_classif.create_submittable_dataframe(input_data_df=input,
 ```
 
 ---
-**NOTE**
+
+#### **NOTE**
 
 When calling ```create_submittable_dataframe```, the provided ```input_data_df``` should have all of the features as well as the target as columns, and samples as the index.
 
@@ -130,11 +131,86 @@ To start automated parsimonious analysis using Datarobot, a DataRobot project wi
 
 <a name='existing_project'></a>
 ### - Use a previously created DataRobot project:
-...
+To use a previously created DataRobot project, you must have access to the project with the account that provided the API key. 
+
+* First, [initialize the API connection](#initialize_datarobot) with an API key that provides access to the project of interest.
+
+```python
+rapa.utils.initialize_dr_api('tutorial')
+```
+
+* Then, provide either a **project id** or unique **project name** to [`rapa.utils.find_project`](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/docs/source/modules.html#rapa.utils.find_project) and get a [`datarobot.models.Project`](https://datarobot-public-api-client.readthedocs-hosted.com/en/v2.28.0/autodoc/api_reference.html#datarobot.models.Project) object for further analysis.
+
+```python
+project = rapa.utils.find_project('PROJECT_OF_INTEREST')
+```
 
 <a name='new_project_rapa'></a>
 ### - Create and submit data for a new DataRobot project using `rapa`:
-...
+When creating a new DataRobot project, the API key used should be from an account which the project will be created. Additionally, the data for training will be submitted, and the target will be provided and selected with the API.
+
+* First, [initialize the API connection](#initialize_datarobot) with an API key that provides access to the account where the project will be created.
+
+```python
+rapa.utils.initialize_dr_api('tutorial')
+```
+
+* Load the data for machine learning using `pandas`
+
+```python
+# load data (make sure features are columns, and samples are rows)
+
+from sklearn import datasets # data used in this tutorial
+import pandas as pd # used for easy data management
+
+# loads the dataset (as a dictionary)
+breast_cancer_dataset = datasets.load_breast_cancer()
+
+# puts features and targets from the dataset into a dataframe
+breast_cancer_df = pd.DataFrame(data=breast_cancer_dataset['data'], columns=breast_cancer_dataset['feature_names'])
+breast_cancer_df['benign'] = breast_cancer_dataset['target']
+```
+
+* Create a `rapa` object for either classification or regression (this example is a classification problem)
+
+```python
+# Creates a rapa classifcation object
+depression_classification = rapa.rapa.RAPAClassif()
+```
+
+* Make a DataRobot submittable dataframe using [`create_submittable_dataframe`](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/docs/source/modules.html#rapa.base.RAPABase.create_submittable_dataframe)
+
+```python
+# creates a datarobot submittable dataframe with cross validation folds stratified for the target (benign)
+sub_df = depression_classification.create_submittable_dataframe(breast_cancer_df, target_name='benign')
+```
+
+---
+
+#### **NOTE**
+
+`rapa`'s `create_submittable_dataframe` takes the number of features to initially filter to.
+
+If filtering features, either the `sklearn` function [`sklearn.feature_selection.f_classif`](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_classif.html?highlight=f_classif#sklearn.feature_selection.f_classif) or [`sklearn.feature_selection.f_regression`](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_regression.html?highlight=f_regress#sklearn.feature_selection.f_regression) is used depending on the `rapa` instance that is called. In the case of this example, the function is being called by a `rapa.RAPAClassif object`, so `f_classif` will be used.
+
+Additionally, `create_submittable_dataframe` can take a random state as an argument. When changing the random state, the features that are filtered can sometimes change drastically. This is because the average ANOVA F score over the cross-validation folds is calculated for selecting the features, and the random state changes which samples are in each cross-validation fold.
+
+---
+
+* Finally, submit the 'submittable dataframe' to DataRobot as a project
+
+```python
+# submits a project to datarobot using our dataframe, target, and project name.
+project = depression_classification.submit_datarobot_project(input_data_df=sub_df, target_name='benign', project_name='TUTORIAL_breast_cancer')
+```
+
+---
+
+#### **NOTE**
+
+This will run DataRobot's autopilot feature on the data submitted.
+
+---
 
 Then, ...
 
