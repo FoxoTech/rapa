@@ -175,14 +175,14 @@ breast_cancer_df['benign'] = breast_cancer_dataset['target']
 
 ```python
 # Creates a rapa classifcation object
-depression_classification = rapa.rapa.RAPAClassif()
+bc_classification = rapa.rapa.RAPAClassif()
 ```
 
 * Make a DataRobot submittable dataframe using [`create_submittable_dataframe`](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/docs/source/modules.html#rapa.base.RAPABase.create_submittable_dataframe)
 
 ```python
 # creates a datarobot submittable dataframe with cross validation folds stratified for the target (benign)
-sub_df = depression_classification.create_submittable_dataframe(breast_cancer_df, target_name='benign')
+sub_df = bc_classification.create_submittable_dataframe(breast_cancer_df, target_name='benign')
 ```
 
 ---
