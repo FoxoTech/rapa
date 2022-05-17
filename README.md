@@ -50,6 +50,8 @@ Majority of `rapa`'s utility comes from the DataRobot auto-ML platform. To utili
 **This API key lets anyone who has it access your DataRobot projects, so never share it with anyone.**
 
 To avoid sharing your API accidentally by uploading a notebook to github, it is suggested to use the `rapa` function to read in a pickled dictionary for the API key or using [`datarobot`'s configuration for authentication.](https://docs.datarobot.com/en/docs/api/api-quickstart/api-qs.html#configure-api-authentication)
+ 
+ </details>
 
 ---
 
