@@ -222,9 +222,46 @@ This will run DataRobot's autopilot feature on the data submitted.
 
 ---
 
-Then, ...
+### After obtaining a DataRobot Project
+Once a DataRobot project object is loaded into Python, the parsimonious model analysis can begin.
 
-To present to the user the trade-off between the size of Feature List and the model performance for each Feature List, a series of boxplots can be plotted `rapa.utils.parsimony_performance_boxplot`.
+Using an initialized `rapa` object (`rapa.RAPAClassif` or `rapa.RAPARegress`), call the [`perform_parsimony`](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/docs/source/modules.html#rapa.base.RAPABase.perform_parsimony) function.
+
+```python
+# perform parsimony on the breast-cancer classification data
+# use a featurelist prefix `TEST`
+# start with the `Informative Features` featurelist provided by datarobot
+# use a feature range starting with 25 features, down to 1
+# have 5 `lives`, so if the models do not become more accurate, it will stop feature reduction
+# try and reduce overfitting with a cross-validation average mean error limit of 0.8
+# graph feature performance over time, as well as model performance
+ret = bc_classification.perform_parsimony(project=project, 
+                                          featurelist_prefix='TEST', 
+                                          starting_featurelist_name='Informative Features', 
+                                          feature_range=[25, 20, 15, 10, 5, 4, 3, 2, 1],
+                                          lives=5,
+                                          cv_average_mean_error_limit=.8,
+                                          to_graph=['feature_performance', 'models'])
+```
+
+---
+<details open>
+ <summary>NOTE</summary>
+
+The `perform_parsimony` function takes, at minimum, a list of desired featurelist sizes (`feature_range`) and a DataRobot project (`project`). Additional arguments allow for choosing the featurelist to begin parsimonious feature reduction (`starting_featurelist`), what prefix to use for `rapa` reduced featurelists (`featurelist_prefix`), what metric to use for deciding the 'best' models (`metric`), which visuals to present (`to_graph`), etc. To get in-depth descriptions of each argument, visit the [documentation for `perform_parsimony`](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/docs/source/modules.html#rapa.base.RAPABase.perform_parsimony).
+
+</details>
+
+
+---
+
+
+To present to the user the trade-off between the size of Feature List and the model performance for each Feature List, a series of boxplots can be plotted. Choose to plot either after each feature reduction during parsimony analysis (provide the argument ```to_graph=['models']``` to `perform_parsominy`), or use the function `rapa.utils.parsimony_performance_boxplot` and provide a project and the featurelist prefix used.
+
+<div align="center">
+  <img src="https://github.com/FoxoTech/rapa/blob/main/docs/tutorial_boxplots.png" alt="tutorial_boxplots"/>
+  <br/>
+</div>
 
 Although the current implementation of these features will be based on basic techniques such as linear feature filters and recursive feature elimination, we plan to rapidly improve these features by integrating state-of-the-art techniques from the academic literature.
 

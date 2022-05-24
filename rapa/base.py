@@ -441,13 +441,13 @@ class RAPABase():
                 Similar to datarobot's Feature Importance Rank Ensembling for advanced feature selection (FIRE) package's 'lifes' 
                 https://www.datarobot.com/blog/using-feature-importance-rank-ensembling-fire-for-advanced-feature-selection/ 
             
-            cv_mean_error_limit: float, optional (default = None)
+            cv_average_mean_error_limit: float, optional (default = None)
                 The limit of cross validation mean error to help avoid overfitting. By default, the limit is off, 
                 and the each 'feature_range' will be ran. Limit exists only if supplied a number >= 0.0
 
                 Ex: 'feature_range' = 2.5, feature_range = [100, 90, 80, 50]
                     RAPA finds that the average AUC for each CV fold is [.8, .6, .9, .5] respectfully,
-                    the mean of these is 0.7. The average error is += 0.15. If 0.15 >= cv_mean_error_limit,
+                    the mean of these is 0.7. The average error is += 0.15. If 0.15 >= cv_average_mean_error_limit,
                     the training stops.
             
             feature_impact_metric: str, optional (default = 'median')
