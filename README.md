@@ -289,7 +289,7 @@ rapa.utils.feature_performance_stackplot(project=project,
   <br/>
 </div>
 
-
+## Additional Tutorial
 In addition to this readme, there is a tutorial for using `rapa` with DataRobot and readily available data from `sklearn` that is currently demonstrated in [general_tutorial.ipynb](https://github.com/FoxoTech/rapa/blob/main/tutorials/general_tutorial.ipynb), which is also in the [documentation](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/tutorials/general_tutorial.html). 
 
 
