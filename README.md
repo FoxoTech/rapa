@@ -259,7 +259,7 @@ The `perform_parsimony` function takes, at minimum, a list of desired featurelis
 To present to the user the trade-off between the size of Feature List and the model performance for each Feature List, a series of boxplots can be plotted. Choose to plot either after each feature reduction during parsimony analysis (provide the argument ```to_graph=['models']``` to `perform_parsominy`), or use the function `rapa.utils.parsimony_performance_boxplot` and provide a project and the featurelist prefix used.
 
 <div align="center">
-  <img src="https://github.com/FoxoTech/rapa/blob/main/docs/tutorial_boxplots.png" alt="tutorial_boxplots"/>
+  <img src="https://github.com/FoxoTech/rapa/blob/main/docs/tutorial_boxplots.png" alt="tutorial_boxplots" width=400/>
   <br/>
 </div>
 
