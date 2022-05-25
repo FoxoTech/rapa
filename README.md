@@ -14,7 +14,10 @@
 * [Getting Started](#getting_started)
 * [Primary Features](#primary_features)
   * [Initial Feature Filtering](#initial_feature_filtering)
+    * [With Previous DataRobot Project](#previous_project)
+    * [Submitting a New Project With RAPA](#submit_project)
   * [Automated Parsimony Analysis](#automated_parsimony_analysis)
+    * [Visualization](#visualization)
  
  
 </details>
@@ -100,7 +103,7 @@ Currently, `rapa` provides two primary features:
 
 <a name='initial_feature_filtering'></a>
 ## Initial Feature Filtering
-Automated machine learning is easily applicable to samples with fewer features, as the time and resources required reduces significantly as the number of features decreases. Additionally, DataRobot's automated ML platform only accepts projects that have up to 20,000 features per sample. 
+Automated machine learning is easily applicable to samples with fewer features, as the time and resources required reduces significantly as the number of initial features decreases. Additionally, DataRobot's automated ML platform only accepts projects that have up to 20,000 features per sample. 
 
 For feature selection, `rapa` uses `sklearn`'s ```f_classif``` or ```f_regression``` to reduce the number of features. This provides an ANOVA F-statistic for each sample, which is then used to select the features with the highest F-statistics.
 
@@ -133,7 +136,7 @@ To start automated parsimonious analysis using Datarobot, a DataRobot project wi
 * [Use an existing project](#existing_project)
 * [Create a new project using `rapa`](#new_project_rapa)
 
-<a name='existing_project'></a>
+<a name='previous_project'></a>
 ### - Use a previously created DataRobot project:
 To use a previously created DataRobot project, you must have access to the project with the account that provided the API key. 
 
@@ -149,7 +152,7 @@ rapa.utils.initialize_dr_api('tutorial')
 project = rapa.utils.find_project('PROJECT_OF_INTEREST')
 ```
 
-<a name='new_project_rapa'></a>
+<a name='submit_project'></a>
 ### - Create and submit data for a new DataRobot project using `rapa`:
 When creating a new DataRobot project, the API key used should be from an account which the project will be created. Additionally, the data for training will be submitted, and the target will be provided and selected with the API.
 
@@ -225,7 +228,7 @@ This will run DataRobot's autopilot feature on the data submitted.
 ### After obtaining a DataRobot Project
 Once a DataRobot project object is loaded into Python, the parsimonious model analysis can begin.
 
-Using an initialized `rapa` object (`rapa.RAPAClassif` or `rapa.RAPARegress`), call the [`perform_parsimony`](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/docs/source/modules.html#rapa.base.RAPABase.perform_parsimony) function.
+Using an initialized `rapa` object (`rapa.RAPAClassif` or `rapa.RAPARegress`), call the [`perform_parsimony`](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/docs/source/modules.html#rapa.base.RAPABase.perform_parsimony) function. This function returns None.
 
 ```python
 # perform parsimony on the breast-cancer classification data
@@ -235,14 +238,16 @@ Using an initialized `rapa` object (`rapa.RAPAClassif` or `rapa.RAPARegress`), c
 # have 5 `lives`, so if the models do not become more accurate, it will stop feature reduction
 # try and reduce overfitting with a cross-validation average mean error limit of 0.8
 # graph feature performance over time, as well as model performance
-ret = bc_classification.perform_parsimony(project=project, 
-                                          featurelist_prefix='TEST', 
-                                          starting_featurelist_name='Informative Features', 
-                                          feature_range=[25, 20, 15, 10, 5, 4, 3, 2, 1],
-                                          lives=5,
-                                          cv_average_mean_error_limit=.8,
-                                          to_graph=['feature_performance', 'models'])
+bc_classification.perform_parsimony(project=project, 
+                                    featurelist_prefix='TEST', 
+                                    starting_featurelist_name='Informative Features', 
+                                    feature_range=[25, 20, 15, 10, 5, 4, 3, 2, 1],
+                                    lives=5,
+                                    cv_average_mean_error_limit=.8,
+                                    to_graph=['feature_performance', 'models'])
 ```
+
+While running `perform_parsimony`, `rapa` is checking job status with DataRobot. This is displayed to the user as printed statements while running the function. Additionally, if the `progress_bar` argument is True, the `tqdm` progress bar will display updates in text.
 
 ---
 <details open>
@@ -255,7 +260,10 @@ The `perform_parsimony` function takes, at minimum, a list of desired featurelis
 
 ---
 
+<a name='visualization'></a>
+## Visualization
 
+### Model Performance
 To present to the user the trade-off between the size of Feature List and the model performance for each Feature List, a series of boxplots can be plotted. Choose to plot either after each feature reduction during parsimony analysis (provide the argument ```to_graph=['models']``` to `perform_parsominy`), or use the function `rapa.utils.parsimony_performance_boxplot` and provide a project and the featurelist prefix used.
 
 <div align="center">
@@ -263,8 +271,16 @@ To present to the user the trade-off between the size of Feature List and the mo
   <br/>
 </div>
 
+### Feature Impact Evolution
+While the number of features decreases, each feature's impact changes as well. Features which had previously had high impact on the models with many other features may no longer have significance once more features are removed. This suggests towards the multi-variate nature of feature impact and it's ability to create parsimonious models. A stackplot of each feature's impact can be plotted with `rapa.utils.feature_performance_stackplot` to show the evolution of the impact of the features as the number of features decreases.
+
+<div align="center">
+  <img src="https://github.com/FoxoTech/rapa/blob/main/docs/stackplot.png" alt="tutorial_boxplots" width=600/>
+  <br/>
+</div>
+
+
 Although the current implementation of these features will be based on basic techniques such as linear feature filters and recursive feature elimination, we plan to rapidly improve these features by integrating state-of-the-art techniques from the academic literature.
 
 
-
-A tutorial for using `rapa` with DataRobot is currently being demonstrated in [general_tutorial.ipynb](https://github.com/FoxoTech/rapa/blob/main/tutorials/general_tutorial.ipynb). 
+A tutorial for using `rapa` with DataRobot and readily available data from `sklearn` is currently being demonstrated in [general_tutorial.ipynb](https://github.com/FoxoTech/rapa/blob/main/tutorials/general_tutorial.ipynb), which is also in the [documentation](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/tutorials/general_tutorial.html). 
