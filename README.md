@@ -211,7 +211,7 @@ Additionally, `create_submittable_dataframe` can take a random state as an argum
 
 ```python
 # submits a project to datarobot using our dataframe, target, and project name.
-project = depression_classification.submit_datarobot_project(input_data_df=sub_df, target_name='benign', project_name='TUTORIAL_breast_cancer')
+project = bc_classification.submit_datarobot_project(input_data_df=sub_df, target_name='benign', project_name='TUTORIAL_breast_cancer')
 ```
 
 ---
