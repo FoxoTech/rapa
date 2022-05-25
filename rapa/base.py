@@ -364,6 +364,11 @@ class RAPABase():
                 The random number generator seed for DataRobot. Use this parameter to make sure
                 that DataRobot will give you the same results each time you run it on the
                 same input data set with that seed.
+            
+        :Returns:
+        ------------
+            datarobot.Project
+                The DataRobot project submitted
 
         """
         # TODO: provide an option for columns to disregard
@@ -472,6 +477,13 @@ class RAPABase():
 
                 When None, the metric is determined by what class inherits from base. For instance,
                 a `RAPAClassif` instance's default is 'AUC', and `RAPARegress` is 'R Squared'
+            
+            verbose: bool, optional (default = True)
+                If True, prints updates from DataRobot and rapa during parsimonious feature rduction
+        
+        :Returns:
+        ------------
+            None
         """ 
         # TODO: return a dictionary of values? {"time_taken": 2123, "cv_mean_error": list[floats], ""}
         # TODO: graph cv performance boxplots
@@ -713,7 +725,7 @@ class RAPABase():
                                                                         previous_best_model=previous_best_model, 
                                                                         featurelist_prefix=featurelist_prefix, 
                                                                         metric=metric,
-                                                                        verbose=True)
+                                                                        verbose=verbose)
                     tqdm.write(f'Checking lives: {time.time()-temp_start:.{config.TIME_DECIMALS}f}s')
                     if lives < 0:
                         current_best_model_score = mean(previous_best_model.get_cross_validation_scores()['cvScores'][metric].values())
