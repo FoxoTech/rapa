@@ -131,7 +131,7 @@ If the number of features is reduced, then there should be no missing values.
 
 <a name='automated_parsimony_analysis'></a>
 ## Automated Parsimony Analysis
-To start automated parsimonious analysis using Datarobot, a DataRobot project with a target and uploaded data must already be created.
+To start automated parsimony analysis using Datarobot, a DataRobot project with a target and uploaded data must already be created.
 
 * [Use an existing project](#previous_project)
 * [Create a new project using `rapa`](#submit_project)
