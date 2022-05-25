@@ -137,7 +137,7 @@ To start automated parsimonious analysis using Datarobot, a DataRobot project wi
 * [Create a new project using `rapa`](#new_project_rapa)
 
 <a name='previous_project'></a>
-### - Use a previously created DataRobot project:
+### Use a previously created DataRobot project:
 To use a previously created DataRobot project, you must have access to the project with the account that provided the API key. 
 
 * First, [initialize the API connection](#initialize_datarobot) with an API key that provides access to the project of interest.
@@ -153,7 +153,7 @@ project = rapa.utils.find_project('PROJECT_OF_INTEREST')
 ```
 
 <a name='submit_project'></a>
-### - Create and submit data for a new DataRobot project using `rapa`:
+### Create and submit data for a new DataRobot project using `rapa`:
 When creating a new DataRobot project, the API key used should be from an account which the project will be created. Additionally, the data for training will be submitted, and the target will be provided and selected with the API.
 
 * First, [initialize the API connection](#initialize_datarobot) with an API key that provides access to the account where the project will be created.
