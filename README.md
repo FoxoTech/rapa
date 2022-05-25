@@ -264,7 +264,12 @@ The `perform_parsimony` function takes, at minimum, a list of desired featurelis
 ## Visualization
 
 ### Model Performance
-To present to the user the trade-off between the size of Feature List and the model performance for each Feature List, a series of boxplots can be plotted. Choose to plot either after each feature reduction during parsimony analysis (provide the argument ```to_graph=['models']``` to `perform_parsominy`), or use the function `rapa.utils.parsimony_performance_boxplot` and provide a project and the featurelist prefix used.
+To present to the user the trade-off between the size of Feature List and the model performance for each Feature List, a series of boxplots can be plotted. The y-axis uses the chosen measurment of accuracy for the models (AUC, R-squared, etc.), while the x-axis has the featurelist sizes decreasing from left to right. Choose to plot either after each feature reduction during parsimony analysis (provide the argument ```to_graph=['models']``` to `perform_parsimony`), or use the function `rapa.utils.parsimony_performance_boxplot` and provide a project and the featurelist prefix used.
+
+```python
+rapa.utils.parsimony_performance_boxplot(project=project,
+                                         starting_featurelist='Informative Features')
+```
 
 <div align="center">
   <img src="https://github.com/FoxoTech/rapa/blob/main/docs/tutorial_boxplots.png" alt="tutorial_boxplots" width=400/>
@@ -272,7 +277,12 @@ To present to the user the trade-off between the size of Feature List and the mo
 </div>
 
 ### Feature Impact Evolution
-While the number of features decreases, each feature's impact changes as well. Features which had previously had high impact on the models with many other features may no longer have significance once more features are removed. This suggests towards the multi-variate nature of feature impact and it's ability to create parsimonious models. A stackplot of each feature's impact can be plotted with `rapa.utils.feature_performance_stackplot` to show the evolution of the impact of the features as the number of features decreases.
+While the number of features decreases, each feature's impact changes as well. Features which had previously had high impact on the models with many other features may no longer have significance once more features are removed. This suggests towards the multi-variate nature of feature impact and it's ability to create parsimonious models. A stackplot using height in the y-axis to represent impact provides insight into the evolution of each feature's impact as the number of features decreases. Choose to plot either after each feature reduction during parsimony analysis (provide the argument ```to_graph=['feature_performance']``` to `perform_parsimony`), or use the function `rapa.utils.feature_performance_stackplot` and provide a project and the featurelist prefix used.
+
+```python
+rapa.utils.feature_performance_stackplot(project=project,
+                                         starting_featurelist='Informative Features')
+```
 
 <div align="center">
   <img src="https://github.com/FoxoTech/rapa/blob/main/docs/stackplot.png" alt="tutorial_boxplots" width=600/>
