@@ -51,6 +51,9 @@ Majority of `rapa`'s utility comes from the DataRobot auto-ML platform. To utili
 
 <img src='https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_272x92dp.png' alt='image'></img>
 
+![](docs/profile_pull_down.png)
+
+![](https://github.com/FoxoTech/rapa/blob/main/docs/profile_pull_down.png)
 
 ---
 <details open>
