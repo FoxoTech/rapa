@@ -34,26 +34,14 @@ pip install rapa
 ### Initializing the DataRobot API
 Majority of `rapa`'s utility comes from the DataRobot auto-ML platform. To utilize DataRobot through Python, an API key is required. Acquire an API key from [app.datarobot.com](app.datarobot.com) after logging into an account. [(More information about DataRobot's API keys)](https://docs.datarobot.com/en/docs/api/api-quickstart/api-qs.html)
 
-<div align="center">
-  <p>First, log in and find the developer tools tab.</p>
-  <img src="docs/profile_pull_down.png" alt="profile_pulldown" width="50%"/>
-  <br/>
-</div>
-  <div align="center">
-  <p>Then create an API key for access to the API with Python.</p>
-  <img src="https://github.com/FoxoTech/rapa/blob/main/docs/create_api_key.png" alt="api_key" width="300px"/>
-  <br/>
-</div>
+First, log in and find the developer tools tab.
 
-<img src='https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_272x92dp.png' alt='image' width='auto'></img>
+![profile_pulldown](docs/profile_pull_down.png)
 
-<img src='https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_272x92dp.png' alt='image' width='50%'></img>
+Then create an API key for access to the API with Python.
 
-<img src='https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_272x92dp.png' alt='image'></img>
+![create_api_key](docs/create_api_key.png)
 
-![](docs/profile_pull_down.png)
-
-![](https://github.com/FoxoTech/rapa/blob/main/docs/profile_pull_down.png)
 
 ---
 <details open>
@@ -280,10 +268,7 @@ rapa.utils.parsimony_performance_boxplot(project=project,
                                          starting_featurelist='Informative Features')
 ```
 
-<div align="center">
-  <img src="https://github.com/FoxoTech/rapa/blob/main/docs/tutorial_boxplots.png" alt="tutorial_boxplots" width=400/>
-  <br/>
-</div>
+![boxplot](docs/tutorial_boxplots.png)
 
 ### Feature Impact Evolution
 While the number of features decreases, each feature's impact changes as well. Features which had previously had high impact on the models with many other features may no longer have significance once more features are removed. This suggests towards the multi-variate nature of feature impact and it's ability to create parsimonious models. A stackplot using height in the y-axis to represent impact provides insight into the evolution of each feature's impact as the number of features decreases. Choose to plot either after each feature reduction during parsimony analysis (provide the argument ```to_graph=['feature_performance']``` to `perform_parsimony`), or use the function `rapa.utils.feature_performance_stackplot` and provide a project and the featurelist prefix used.
@@ -293,24 +278,7 @@ rapa.utils.feature_performance_stackplot(project=project,
                                          starting_featurelist='Informative Features')
 ```
 
-![sus](docs/stackplot.png | width=600)
-
-
-.. image:: docs/stackplot.png
-  :width: 400
-  :alt: Alternative text
-
-
-<div align="center">
-  <img alt="tutorial_boxplots" width=600> 
-
-
-    ![sus](docs/stackplot.png)
-
-
-  <img/>
-  <br/>
-</div>
+![stackplot](docs/stackplot.png)
 
 ## Additional Tutorial
 In addition to this readme, there is a tutorial for using `rapa` with DataRobot and readily available data from `sklearn` that is currently demonstrated in [general_tutorial.ipynb](https://github.com/FoxoTech/rapa/blob/main/tutorials/general_tutorial.ipynb), which is also in the [documentation](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/tutorials/general_tutorial.html). 
