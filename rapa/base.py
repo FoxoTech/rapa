@@ -364,6 +364,11 @@ class RAPABase():
                 The random number generator seed for DataRobot. Use this parameter to make sure
                 that DataRobot will give you the same results each time you run it on the
                 same input data set with that seed.
+            
+        :Returns:
+        ------------
+            datarobot.Project
+                The DataRobot project submitted
 
         """
         # TODO: provide an option for columns to disregard
@@ -441,13 +446,13 @@ class RAPABase():
                 Similar to datarobot's Feature Importance Rank Ensembling for advanced feature selection (FIRE) package's 'lifes' 
                 https://www.datarobot.com/blog/using-feature-importance-rank-ensembling-fire-for-advanced-feature-selection/ 
             
-            cv_mean_error_limit: float, optional (default = None)
+            cv_average_mean_error_limit: float, optional (default = None)
                 The limit of cross validation mean error to help avoid overfitting. By default, the limit is off, 
                 and the each 'feature_range' will be ran. Limit exists only if supplied a number >= 0.0
 
                 Ex: 'feature_range' = 2.5, feature_range = [100, 90, 80, 50]
                     RAPA finds that the average AUC for each CV fold is [.8, .6, .9, .5] respectfully,
-                    the mean of these is 0.7. The average error is += 0.15. If 0.15 >= cv_mean_error_limit,
+                    the mean of these is 0.7. The average error is += 0.15. If 0.15 >= cv_average_mean_error_limit,
                     the training stops.
             
             feature_impact_metric: str, optional (default = 'median')
@@ -472,6 +477,13 @@ class RAPABase():
 
                 When None, the metric is determined by what class inherits from base. For instance,
                 a `RAPAClassif` instance's default is 'AUC', and `RAPARegress` is 'R Squared'
+            
+            verbose: bool, optional (default = True)
+                If True, prints updates from DataRobot and rapa during parsimonious feature rduction
+        
+        :Returns:
+        ------------
+            None
         """ 
         # TODO: return a dictionary of values? {"time_taken": 2123, "cv_mean_error": list[floats], ""}
         # TODO: graph cv performance boxplots
@@ -713,7 +725,7 @@ class RAPABase():
                                                                         previous_best_model=previous_best_model, 
                                                                         featurelist_prefix=featurelist_prefix, 
                                                                         metric=metric,
-                                                                        verbose=True)
+                                                                        verbose=verbose)
                     tqdm.write(f'Checking lives: {time.time()-temp_start:.{config.TIME_DECIMALS}f}s')
                     if lives < 0:
                         current_best_model_score = mean(previous_best_model.get_cross_validation_scores()['cvScores'][metric].values())
