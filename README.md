@@ -286,6 +286,12 @@ rapa.utils.feature_performance_stackplot(project=project,
 
 ![sus](docs/stackplot.png)
 
+
+.. image:: docs/stackplot.png
+  :width: 400
+  :alt: Alternative text
+
+
 <div align="center">
   <img alt="tutorial_boxplots" width=600> 
 
