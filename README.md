@@ -36,7 +36,7 @@ Majority of `rapa`'s utility comes from the DataRobot auto-ML platform. To utili
 
 <div align="center">
   <p>First, log in and find the developer tools tab.</p>
-  <img src="https://github.com/FoxoTech/rapa/blob/main/docs/profile_pull_down.png" alt="profile_pulldown" width="50%"/>
+  <img src="docs/profile_pull_down.png" alt="profile_pulldown" width="50%"/>
   <br/>
 </div>
   <div align="center">
