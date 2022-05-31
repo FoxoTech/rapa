@@ -45,11 +45,11 @@ Majority of `rapa`'s utility comes from the DataRobot auto-ML platform. To utili
   <br/>
 </div>
 
-<img src='docs/profile_pull_down.png' alt='image' width='auto'></img>
+<img src='https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_272x92dp.png' alt='image' width='auto'></img>
 
-<img src='docs/profile_pull_down.png' alt='image' width='50%'></img>
+<img src='https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_272x92dp.png' alt='image' width='50%'></img>
 
-<img src='docs/profile_pull_down.png' alt='image'></img>
+<img src='https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_272x92dp.png' alt='image'></img>
 
 
 ---
