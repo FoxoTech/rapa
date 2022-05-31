@@ -45,11 +45,11 @@ Majority of `rapa`'s utility comes from the DataRobot auto-ML platform. To utili
   <br/>
 </div>
 
-<img src='https://github.com/FoxoTech/rapa/blob/main/docs/profile_pull_down.png' alt='image' width='auto'></img>
+<img src='docs/profile_pull_down.png' alt='image' width='auto'></img>
 
-<img src='https://github.com/FoxoTech/rapa/blob/main/docs/profile_pull_down.png' alt='image' width='50%'></img>
+<img src='docs/profile_pull_down.png' alt='image' width='50%'></img>
 
-<img src='https://github.com/FoxoTech/rapa/blob/main/docs/profile_pull_down.png' alt='image'></img>
+<img src='docs/profile_pull_down.png' alt='image'></img>
 
 
 ---
