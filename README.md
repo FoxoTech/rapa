@@ -285,7 +285,7 @@ rapa.utils.feature_performance_stackplot(project=project,
 ```
 
 <div align="center">
-  <img src="https://github.com/FoxoTech/rapa/blob/main/docs/stackplot.png" alt="tutorial_boxplots" width=600/>
+  <img src="docs/stackplot.png" alt="tutorial_boxplots" width=600/>
   <br/>
 </div>
 
