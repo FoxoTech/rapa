@@ -284,6 +284,8 @@ rapa.utils.feature_performance_stackplot(project=project,
                                          starting_featurelist='Informative Features')
 ```
 
+![sus](https://github.com/FoxoTech/rapa/blob/main/docs/stackplot.png)
+
 <div align="center">
   <img src="docs/stackplot.png" alt="tutorial_boxplots" width=600/>
   <br/>
