@@ -36,16 +36,16 @@ Majority of `rapa`'s utility comes from the DataRobot auto-ML platform. To utili
 
 <div align="center">
   <p>First, log in and find the developer tools tab.</p>
-  <img src="https://github.com/FoxoTech/rapa/blob/main/docs/profile_pull_down.png" alt="profile_pulldown" width="200"/>
+  <img src="https://github.com/FoxoTech/rapa/blob/main/docs/profile_pull_down.png" alt="profile_pulldown" width="200px"/>
   <br/>
 </div>
   <div align="center">
   <p>Then create an API key for access to the API with Python.</p>
-  <img src="https://github.com/FoxoTech/rapa/blob/main/docs/create_api_key.png" alt="api_key" width="300"/>
+  <img src="https://github.com/FoxoTech/rapa/blob/main/docs/create_api_key.png" alt="api_key" width="300px"/>
   <br/>
 </div>
 
-<img src='https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.pexels.com%2Fsearch%2Fbeautiful%2F&psig=AOvVaw2CO-_pnQRQ8A2e1E2HVg4o&ust=1654107950172000&source=images&cd=vfe&ved=0CAwQjRxqFwoTCMjcxriuivgCFQAAAAAdAAAAABAD' alt='image' width='300'></img>
+<img src='https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.pexels.com%2Fsearch%2Fbeautiful%2F&psig=AOvVaw2CO-_pnQRQ8A2e1E2HVg4o&ust=1654107950172000&source=images&cd=vfe&ved=0CAwQjRxqFwoTCMjcxriuivgCFQAAAAAdAAAAABAD' alt='image' width='300px'></img>
 
 
 ---
