@@ -284,7 +284,7 @@ rapa.utils.feature_performance_stackplot(project=project,
                                          starting_featurelist='Informative Features')
 ```
 
-![sus](docs/stackplot.png)
+![sus](docs/stackplot.png | width=600)
 
 
 .. image:: docs/stackplot.png
