@@ -45,6 +45,8 @@ Majority of `rapa`'s utility comes from the DataRobot auto-ML platform. To utili
   <br/>
 </div>
 
+<img src='https://joshschaaf.com/images/backgrounds/small_sparkles.gif' alt='sparkle'></img>
+
 
 ---
 <details open>
