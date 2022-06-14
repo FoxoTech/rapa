@@ -29,8 +29,9 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install -e tests/test_requirements.txt
-          pip install -e .
+          pip install pipenv
+          pipenv install -r tests/test_requirements.txt
+          pipenv install -e .
 
       - name: List files in the repository
         run: |
