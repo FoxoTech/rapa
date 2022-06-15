@@ -106,7 +106,7 @@ For feature selection, `rapa` uses `sklearn`'s ```f_classif``` or ```f_regressio
 
 ```python
 # first, create a rapa classification object
-rapa_classif = rapa.rapa.RAPAClassif()
+rapa_classif = rapa.Project.Classification()
 
 # then provide the original data for feature selection
 sdf = rapa_classif.create_submittable_dataframe(input_data_df=input, 
@@ -179,7 +179,7 @@ breast_cancer_df['benign'] = breast_cancer_dataset['target']
 
 ```python
 # Creates a rapa classifcation object
-bc_classification = rapa.rapa.RAPAClassif()
+bc_classification = rapa.Project.Classification()
 ```
 
 * Make a DataRobot submittable dataframe using [`create_submittable_dataframe`](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/docs/source/modules.html#rapa.base.RAPABase.create_submittable_dataframe)
@@ -195,7 +195,7 @@ sub_df = bc_classification.create_submittable_dataframe(breast_cancer_df, target
 
 `rapa`'s `create_submittable_dataframe` takes the number of features to initially filter to.
 
-If filtering features, either the `sklearn` function [`sklearn.feature_selection.f_classif`](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_classif.html?highlight=f_classif#sklearn.feature_selection.f_classif) or [`sklearn.feature_selection.f_regression`](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_regression.html?highlight=f_regress#sklearn.feature_selection.f_regression) is used depending on the `rapa` instance that is called. In the case of this example, the function is being called by a `rapa.RAPAClassif` object, so `f_classif` will be used.
+If filtering features, either the `sklearn` function [`sklearn.feature_selection.f_classif`](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_classif.html?highlight=f_classif#sklearn.feature_selection.f_classif) or [`sklearn.feature_selection.f_regression`](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_regression.html?highlight=f_regress#sklearn.feature_selection.f_regression) is used depending on the `rapa` instance that is called. In the case of this example, the function is being called by a `Project.Classification` object, so `f_classif` will be used.
 
 Additionally, `create_submittable_dataframe` can take a random state as an argument. When changing the random state, the features that are filtered can sometimes change drastically. This is because the average ANOVA F score over the cross-validation folds is calculated for selecting the features, and the random state changes which samples are in each cross-validation fold.
 
@@ -225,7 +225,7 @@ This will run DataRobot's autopilot feature on the data submitted.
 ### After obtaining a DataRobot Project
 Once a DataRobot project object is loaded into Python, the parsimonious model analysis can begin.
 
-Using an initialized `rapa` object (`rapa.RAPAClassif` or `rapa.RAPARegress`), call the [`perform_parsimony`](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/docs/source/modules.html#rapa.base.RAPABase.perform_parsimony) function. This function returns None.
+Using an initialized `rapa` object (`Project.Classification` or `Project.Regression`), call the [`perform_parsimony`](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/docs/source/modules.html#rapa.base.RAPABase.perform_parsimony) function. This function returns None.
 
 ```python
 # perform parsimony on the breast-cancer classification data
