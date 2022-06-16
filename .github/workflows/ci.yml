@@ -32,6 +32,8 @@ jobs:
         run: |
           echo "Installing -r ..."
           pip install -r tests/test_requirements.txt
+          echo "Installing -e"
+          pip install -e
 
       - name: List files in the repository
         run: |
