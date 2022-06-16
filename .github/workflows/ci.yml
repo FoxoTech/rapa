@@ -11,7 +11,7 @@ env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
 jobs:
-  Test rapa:
+  Test_rapa:
     runs-on: ubuntu-latest
     strategy:
       # max-parallel: 4
