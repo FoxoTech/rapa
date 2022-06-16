@@ -5,10 +5,6 @@ import os
 import pickle
 
 
-def test_test():
-    '''blah blah blah'''
-    assert None == None
-
 # test api initialization
 def test_api_initialization():
     '''Checks that the api can be connected with `utils.initialize_dr_api`.
@@ -16,7 +12,7 @@ def test_api_initialization():
     Currently only checks the default endpoint: https://app.datarobot.com/api/v2.
     '''
     print('test_api_inizialization test called')
-    
+
     pkl_file_name = 'dr-tokens.pkl'
     dr_test_api_key = os.environ.get('DR_TEST_RAPA') # get the api key
 
@@ -34,7 +30,3 @@ def test_api_initialization():
     os.remove(pkl_file_name) 
 
     assert retval == None
-
-def test_test1():
-    '''blah blah blah'''
-    assert None == None

@@ -40,4 +40,10 @@ jobs:
           ls ${{ github.workspace }}
       
       - name : Run Tests
-        run: pytest
+        run: pytest --cov=./tests --cov-report xml
+      
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: coverage.xml
