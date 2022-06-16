@@ -37,5 +37,5 @@ jobs:
         run: |
           ls ${{ github.workspace }}
       
-      -name : Run Tests
+      - name : Run Tests
         run: pytest
