@@ -11,7 +11,7 @@ env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
 jobs:
-  test:
+  Test rapa:
     runs-on: ubuntu-latest
     strategy:
       # max-parallel: 4
@@ -35,12 +35,13 @@ jobs:
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
-          
-      - run: echo "🍏 This job's status is ${{ job.status }}."
+      
+      -name : Run Tests
+        run: pytest
 
-      - run: coveralls --service=github
+      """- run: coveralls --service=github
 
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}"""
