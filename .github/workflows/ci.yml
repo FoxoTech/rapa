@@ -9,9 +9,10 @@ on:
 
 env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  DR_TEST_RAPA: ${{secrets.DR_TEST_RAPA}}
 
 jobs:
-  Test_rapa:
+  test-rapa:
     runs-on: ubuntu-latest
     strategy:
       # max-parallel: 4
