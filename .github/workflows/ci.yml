@@ -38,10 +38,3 @@ jobs:
       
       -name : Run Tests
         run: pytest
-
-      """- run: coveralls --service=github
-
-      - name: Coveralls
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}"""
