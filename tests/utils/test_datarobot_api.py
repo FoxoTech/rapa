@@ -30,7 +30,3 @@ def test_api_initialization():
     os.remove(pkl_file_name) 
 
     assert retval == None
-
-def test_fail():
-    '''Test what happens when there is a failed test with github actions.'''
-    assert None == 'None'
