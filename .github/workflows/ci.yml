@@ -12,7 +12,7 @@ env:
   DR_TEST_RAPA: ${{secrets.DR_TEST_RAPA}}
 
 jobs:
-  test-rapa:
+  tests:
     runs-on: ubuntu-latest
     strategy:
       # max-parallel: 4
