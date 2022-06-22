@@ -4,7 +4,7 @@
 
 [![tests](https://github.com/FoxoTech/rapa/actions/workflows/ci.yml/badge.svg)](https://github.com/FoxoTech/rapa/actions/workflows/ci.yml)  [![ReadTheDocs](https://readthedocs.com/projects/life-epigenetics-rapa/badge/?version=latest)](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/)  [![pypi](https://badge.fury.io/py/rapa.svg)](https://pypi.org/project/rapa/#data)  [![codecov](https://codecov.io/gh/FoxoTech/rapa/branch/main/graph/badge.svg?token=XZ24IJZWLL)](https://codecov.io/gh/FoxoTech/rapa) 
 
-![workflow](docs/workflow_0.png)
+![workflow](docs/workflow_0.svg)
 
 `rapa` is currently developed on top of DataRobot's Python API to use DataRobot as a "model-running engine", with plans to include open source software such as `scikit-learn`, `tensorflow`, or `pytorch` in the future. [Install using pip!](#installation)
 
