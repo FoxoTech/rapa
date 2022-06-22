@@ -11,6 +11,7 @@ Welcome to rapa's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   README.md
    docs/source/modules
    tutorials/general_tutorial.ipynb
 

@@ -2,7 +2,9 @@
 
 `rapa` provides a robust, freely usable and shareable tool for creating and analyzing more accurate machine learning (ML) models with fewer features in Python. View documentation on [ReadTheDocs](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/).
 
-[![ReadTheDocs](https://readthedocs.com/projects/life-epigenetics-rapa/badge/?version=latest)](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/) [![pypi](https://img.shields.io/pypi/v/rapa.svg)](https://pypi.org/project/rapa/#data)
+[![tests](https://github.com/FoxoTech/rapa/actions/workflows/ci.yml/badge.svg)](https://github.com/FoxoTech/rapa/actions/workflows/ci.yml)  [![ReadTheDocs](https://readthedocs.com/projects/life-epigenetics-rapa/badge/?version=latest)](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/)  [![pypi](https://badge.fury.io/py/rapa.svg)](https://pypi.org/project/rapa/#data)  [![codecov](https://codecov.io/gh/FoxoTech/rapa/branch/main/graph/badge.svg?token=XZ24IJZWLL)](https://codecov.io/gh/FoxoTech/rapa) 
+
+![workflow](docs/workflow_0.png)
 
 `rapa` is currently developed on top of DataRobot's Python API to use DataRobot as a "model-running engine", with plans to include open source software such as `scikit-learn`, `tensorflow`, or `pytorch` in the future. [Install using pip!](#installation)
 
@@ -34,16 +36,13 @@ pip install rapa
 ### Initializing the DataRobot API
 Majority of `rapa`'s utility comes from the DataRobot auto-ML platform. To utilize DataRobot through Python, an API key is required. Acquire an API key from [app.datarobot.com](app.datarobot.com) after logging into an account. [(More information about DataRobot's API keys)](https://docs.datarobot.com/en/docs/api/api-quickstart/api-qs.html)
 
-<div align="center">
-  <p>First, log in and find the developer tools tab.</p>
-  <img src="https://github.com/FoxoTech/rapa/blob/main/docs/profile_pull_down.png" alt="profile_pulldown" width="200"/>
-  <br/>
-</div>
-  <div align="center">
-  <p>Then create an API key for access to the API with Python.</p>
-  <img src="https://github.com/FoxoTech/rapa/blob/main/docs/create_api_key.png" alt="api_key" width="300"/>
-  <br/>
-</div>
+First, log in and find the developer tools tab.
+
+![profile_pulldown](docs/profile_pull_down.png)
+
+Then create an API key for access to the API with Python.
+
+![create_api_key](docs/create_api_key.png)
 
 
 ---
@@ -109,7 +108,7 @@ For feature selection, `rapa` uses `sklearn`'s ```f_classif``` or ```f_regressio
 
 ```python
 # first, create a rapa classification object
-rapa_classif = rapa.rapa.RAPAClassif()
+rapa_classif = rapa.Project.Classification()
 
 # then provide the original data for feature selection
 sdf = rapa_classif.create_submittable_dataframe(input_data_df=input, 
@@ -182,7 +181,7 @@ breast_cancer_df['benign'] = breast_cancer_dataset['target']
 
 ```python
 # Creates a rapa classifcation object
-bc_classification = rapa.rapa.RAPAClassif()
+bc_classification = rapa.Project.Classification()
 ```
 
 * Make a DataRobot submittable dataframe using [`create_submittable_dataframe`](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/docs/source/modules.html#rapa.base.RAPABase.create_submittable_dataframe)
@@ -198,7 +197,7 @@ sub_df = bc_classification.create_submittable_dataframe(breast_cancer_df, target
 
 `rapa`'s `create_submittable_dataframe` takes the number of features to initially filter to.
 
-If filtering features, either the `sklearn` function [`sklearn.feature_selection.f_classif`](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_classif.html?highlight=f_classif#sklearn.feature_selection.f_classif) or [`sklearn.feature_selection.f_regression`](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_regression.html?highlight=f_regress#sklearn.feature_selection.f_regression) is used depending on the `rapa` instance that is called. In the case of this example, the function is being called by a `rapa.RAPAClassif` object, so `f_classif` will be used.
+If filtering features, either the `sklearn` function [`sklearn.feature_selection.f_classif`](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_classif.html?highlight=f_classif#sklearn.feature_selection.f_classif) or [`sklearn.feature_selection.f_regression`](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_regression.html?highlight=f_regress#sklearn.feature_selection.f_regression) is used depending on the `rapa` instance that is called. In the case of this example, the function is being called by a `Project.Classification` object, so `f_classif` will be used.
 
 Additionally, `create_submittable_dataframe` can take a random state as an argument. When changing the random state, the features that are filtered can sometimes change drastically. This is because the average ANOVA F score over the cross-validation folds is calculated for selecting the features, and the random state changes which samples are in each cross-validation fold.
 
@@ -228,7 +227,7 @@ This will run DataRobot's autopilot feature on the data submitted.
 ### After obtaining a DataRobot Project
 Once a DataRobot project object is loaded into Python, the parsimonious model analysis can begin.
 
-Using an initialized `rapa` object (`rapa.RAPAClassif` or `rapa.RAPARegress`), call the [`perform_parsimony`](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/docs/source/modules.html#rapa.base.RAPABase.perform_parsimony) function. This function returns None.
+Using an initialized `rapa` object (`Project.Classification` or `Project.Regression`), call the [`perform_parsimony`](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/docs/source/modules.html#rapa.base.RAPABase.perform_parsimony) function. This function returns None.
 
 ```python
 # perform parsimony on the breast-cancer classification data
@@ -271,10 +270,7 @@ rapa.utils.parsimony_performance_boxplot(project=project,
                                          starting_featurelist='Informative Features')
 ```
 
-<div align="center">
-  <img src="https://github.com/FoxoTech/rapa/blob/main/docs/tutorial_boxplots.png" alt="tutorial_boxplots" width=400/>
-  <br/>
-</div>
+![boxplot](docs/tutorial_boxplots.png)
 
 ### Feature Impact Evolution
 While the number of features decreases, each feature's impact changes as well. Features which had previously had high impact on the models with many other features may no longer have significance once more features are removed. This suggests towards the multi-variate nature of feature impact and it's ability to create parsimonious models. A stackplot using height in the y-axis to represent impact provides insight into the evolution of each feature's impact as the number of features decreases. Choose to plot either after each feature reduction during parsimony analysis (provide the argument ```to_graph=['feature_performance']``` to `perform_parsimony`), or use the function `rapa.utils.feature_performance_stackplot` and provide a project and the featurelist prefix used.
@@ -284,10 +280,7 @@ rapa.utils.feature_performance_stackplot(project=project,
                                          starting_featurelist='Informative Features')
 ```
 
-<div align="center">
-  <img src="https://github.com/FoxoTech/rapa/blob/main/docs/stackplot.png" alt="tutorial_boxplots" width=600/>
-  <br/>
-</div>
+![stackplot](docs/stackplot.png)
 
 ## Additional Tutorial
 In addition to this readme, there is a tutorial for using `rapa` with DataRobot and readily available data from `sklearn` that is currently demonstrated in [general_tutorial.ipynb](https://github.com/FoxoTech/rapa/blob/main/tutorials/general_tutorial.ipynb), which is also in the [documentation](https://life-epigenetics-rapa.readthedocs-hosted.com/en/latest/tutorials/general_tutorial.html). 

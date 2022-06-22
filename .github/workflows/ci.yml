@@ -1,0 +1,52 @@
+name: test
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    branches:
+      - main
+
+env:
+  GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  DR_TEST_RAPA: ${{secrets.DR_TEST_RAPA}}
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      # max-parallel: 4
+      matrix:
+        #os: [macOS-latest, ubuntu-latest, windows-latest]
+        python-version: [3.8] # [3.6, 3.7, 3.8]
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Install Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Dependencies
+        run: |
+          echo "Installing -r ..."
+          pip install -r tests/test_requirements.txt
+          echo "Installing -e"
+          pip install -e .
+
+      - name: List files in the repository
+        run: |
+          ls ${{ github.workspace }}
+      
+      - name : Run Tests
+        run: pytest --cov --cov-report xml
+      
+      - uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          files: ./coverage.xml,./coverage1.xml,./coverage2.xml # optional
+          flags: unittests # optional
+          name: codecov-umbrella # optional
+          fail_ci_if_error: true # optional (default = false)
+          verbose: true # optional (default = false)

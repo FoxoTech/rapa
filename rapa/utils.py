@@ -160,7 +160,7 @@ def get_starred_model(project: dr.Project,
     return get_best_model(project, starred = True, metric = metric, featurelist_prefix = featurelist_prefix)
 
 
-def initialize_dr_api(token_key, 
+def initialize_dr_api(token_key: str = None, 
                     file_path: str = 'data/dr-tokens.pkl', 
                     endpoint: str = 'https://app.datarobot.com/api/v2'):
     """Initializes the DataRobot API with a pickled dictionary created by the user.
