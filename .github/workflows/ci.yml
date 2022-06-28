@@ -40,7 +40,7 @@ jobs:
           ls ${{ github.workspace }}
       
       - name : Run Tests
-        run: pytest --cov --cov-report xml
+        run: pytest --cov --cov-report xml --verbose
       
       - uses: codecov/codecov-action@v2
         with:
