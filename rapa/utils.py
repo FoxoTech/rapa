@@ -61,7 +61,7 @@ def find_project(project: str) -> dr.Project:
 
 # if changing get_best_model, check if it's alias get_starred_model needs changing
 def get_best_model(project: dr.Project, 
-                featurelist_prefix: str = None, 
+                featurelist_prefix: str = 'RAPA Reduced to', 
                 starred: bool = False, 
                 metric: str = 'AUC') -> dr.Model:
     """Attempts to find the 'best' model in a datarobot by searching cross validation scores of all the
@@ -235,7 +235,7 @@ def get_featurelist(featurelist: str,
             warn(f'No featurelists were found with either the id or name of \'{featurelist}\'')
             return None
         elif len(dr_featurelist) > 1: # if dr_featurelist has more than 1
-            warn(f'More than one featurelist were found: \'{dr_featurelist}\', returning the first.')
+            warn(f'More than one featurelist was found: \'{dr_featurelist}\', returning the first.')
             return dr_featurelist[0]
         else: # dr_Featurelist has 1
             return dr_featurelist[0]
