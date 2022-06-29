@@ -155,7 +155,7 @@ def test_datarobot_best_model_retrieval():
 
 # test feature performance stackplot
 @pytest.mark.order(6)
-def test_plot_feature_performance_stackplot(project, metric, vlines):
+def test_plot_feature_performance_stackplot():
     '''Tests that the feature performance stackplot is created without errors (however... definitely will not catch bugs)
     '''
     for project, metric, vlines in [(project_name, 'mean', False),\
