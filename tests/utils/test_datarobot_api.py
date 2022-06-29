@@ -154,12 +154,13 @@ def test_datarobot_best_model_retrieval():
     assert type(bc_best_model) is dr.Model
 
 # test feature performance stackplot
-@pytest.mark.order(6)
+
 @pytest.mark.parametrize('project,metric,vlines', [(project_name, 'mean', False),\
                                                    (rapa.utils.find_project(project_name), 'mean', False),\
                                                    (project_name, 'cumulative', False),\
                                                    (project_name, 'median', False),\
                                                    (project_name, 'mean', True)])
+@pytest.mark.order(6)
 def test_plot_feature_performance_stackplot(project, metric, vlines):
     '''Tests that the feature performance stackplot is created without errors (however... definitely will not catch bugs)
     '''
