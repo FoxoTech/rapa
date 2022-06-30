@@ -1,4 +1,4 @@
-from ..conf import * # datarobot project names/ids etc
+from .. import conf # datarobot project names/ids etc
 
 import pytest
 
@@ -13,8 +13,8 @@ import datarobot as dr
 def test_plot_feature_performance_stackplot():
     '''Tests that the feature performance stackplot is created without errors (however... definitely will not catch bugs)
     '''
-    for project, metric, vlines in [(project_name, 'mean', True)]:
-        rapa.utils.feature_performance_stackplot(project, featurelist_prefix=featurelist_prefix,\
+    for project, metric, vlines in [(conf.project_name, 'mean', True)]:
+        rapa.utils.feature_performance_stackplot(project, featurelist_prefix=conf.featurelist_prefix,\
                                                 starting_featurelist=None, feature_impact_metric=metric,\
                                                 metric='AUC', vlines=vlines)
     '''
@@ -28,4 +28,3 @@ def test_plot_feature_performance_stackplot():
 def test_plot_parsimony_model_performance():
     '''Tests that the model performance boxplots are created without errors (however... definitely will not catch bugs)
     '''
-    
