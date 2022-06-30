@@ -61,7 +61,7 @@ def find_project(project: str) -> dr.Project:
 
 # if changing get_best_model, check if it's alias get_starred_model needs changing
 def get_best_model(project: dr.Project, 
-                featurelist_prefix: str = 'RAPA Reduced to', 
+                featurelist_prefix: str = None, 
                 starred: bool = False, 
                 metric: str = 'AUC') -> dr.Model:
     """Attempts to find the 'best' model in a datarobot by searching cross validation scores of all the
@@ -84,7 +84,7 @@ def get_best_model(project: dr.Project,
         project: datarobot.Project
             The project object that will be searched for the 'best' model
 
-        featurelist_prefix: str, optional (default = 'RAPA Reduced to')
+        featurelist_prefix: str, optional (default = None)
             The desired featurelist prefix used to search in for models using specific
             rapa featurelists
 
