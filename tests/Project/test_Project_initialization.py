@@ -1,5 +1,4 @@
 import pytest
-
 import rapa
 
 # test rapa.Project initialization

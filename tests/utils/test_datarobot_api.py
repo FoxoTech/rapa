@@ -1,3 +1,5 @@
+from ..conf import * # datarobot project names/ids etc
+
 import pytest
 
 import rapa
@@ -7,7 +9,7 @@ import pickle
 import datarobot as dr
 
 
-project_name = 'TUTORIAL_breast_cancer'
+"""project_name = 'TUTORIAL_breast_cancer'
 project_id = '62b5dc8249ed6b10669ab468'
 
 featurelist_prefix = 'TEST_0.0.9'
@@ -16,7 +18,7 @@ featurelist_id = '62b5de67a92c8927b1fd710b'
 
 starred_model_id = '62b5e1aeddc5c75c4d91cf7a'
 
-best_AUC_model_id = '62b5e1aeddc5c75c4d91cf84'
+best_AUC_model_id = '62b5e1aeddc5c75c4d91cf84'"""
 
 
 # test api initialization
@@ -152,19 +154,3 @@ def test_datarobot_best_model_retrieval():
     assert bc_best_model is not None, f'No best model found for `{project_name}`. Check the project still exists.'
     assert best_AUC_model_id == bc_best_model.id
     assert type(bc_best_model) is dr.Model
-
-# test feature performance stackplot
-@pytest.mark.order(6)
-def test_plot_feature_performance_stackplot():
-    '''Tests that the feature performance stackplot is created without errors (however... definitely will not catch bugs)
-    '''
-    for project, metric, vlines in [(project_name, 'mean', True)]:
-        rapa.utils.feature_performance_stackplot(project, featurelist_prefix=featurelist_prefix,\
-                                                starting_featurelist=None, feature_impact_metric=metric,\
-                                                metric='AUC', vlines=vlines)
-    '''
-    [(project_name, 'mean', False),\
-    (rapa.utils.find_project(project_name), 'mean', False),\
-    (project_name, 'cumulative', False),\
-    (project_name, 'median', False),\
-    (project_name, 'mean', True)]'''
