@@ -1,4 +1,4 @@
-from .. import conf # datarobot project names/ids etc
+from . import conf
 
 import pytest
 

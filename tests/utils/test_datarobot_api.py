@@ -1,4 +1,4 @@
-from .. import conf # datarobot project names/ids etc
+from . import conf # datarobot project names/ids etc
 
 import pytest
 
@@ -9,12 +9,12 @@ import pickle
 import datarobot as dr
 
 
-"""conf.project_name = 'TUTORIAL_breast_cancer'
-conf.project_id = '62b5dc8249ed6b10669ab468'
+"""project_name = 'TUTORIAL_breast_cancer'
+project_id = '62b5dc8249ed6b10669ab468'
 
 featurelist_prefix = 'TEST_0.0.9'
-conf.featurelist_name = featurelist_prefix + ' (25)'
-conf.featurelist_id = '62b5de67a92c8927b1fd710b'
+featurelist_name = featurelist_prefix + ' (25)'
+featurelist_id = '62b5de67a92c8927b1fd710b'
 
 starred_model_id = '62b5e1aeddc5c75c4d91cf7a'
 
