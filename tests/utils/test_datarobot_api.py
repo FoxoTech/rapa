@@ -28,15 +28,35 @@ def test_api_initialization():
 
     Currently only checks the default endpoint: https://app.datarobot.com/api/v2.
     '''
-    print('test_api_inizialization test called')
-
     pkl_file_name = 'dr-tokens.pkl'
+
+    ## try connecting without a file
+    try:
+        retval = rapa.utils.initialize_dr_api('test', pkl_file_name)
+    except ValueError:
+        ## delete the pickle file
+        os.remove(pkl_file_name) 
+        raise ValueError("API Key is Incorrect, check that the key is still valid in DataRobot.")
+    except FileNotFoundError:
+        # this is expected
+        pass
+
+    
     dr_test_api_key = os.environ.get('DR_TEST_RAPA') # get the api key
 
     ## create the pickle file
     pickle.dump({'test':dr_test_api_key}, open(pkl_file_name, 'wb'))
 
-    ## try connecting
+    del dr_test_api_key # delete the api key for security reasons ..?
+
+    ## try connecting with the wrong key
+    try:
+        retval = rapa.utils.initialize_dr_api('ohno', pkl_file_name)
+    except KeyError:
+        # this is expected
+        pass
+
+    ## try connecting correctly
     try:
         retval = rapa.utils.initialize_dr_api('test', pkl_file_name)
     except ValueError:
@@ -103,6 +123,7 @@ def test_datarobot_featurelist_retrieval():
         2. Featurelist id is provided
         3. Name is provided inexactly
         4. Name is provided and fetches no featurelist
+        5. Name is provided and fetches more than one featurelist
     '''
     bc_project = rapa.utils.find_project(conf.project_name)
 
@@ -129,7 +150,12 @@ def test_datarobot_featurelist_retrieval():
     # 4. Name is provided and fetches no featurelist
     wrong_featurelist_name = conf.featurelist_name + 'j923ifnoguhe'
     bc_featurelist = rapa.utils.get_featurelist(wrong_featurelist_name, bc_project)
-    assert bc_featurelist is None, f'4. Featurelist using `{wrong_featurelist_name}` was found (it should not have found a featurelist...?)'
+    assert bc_featurelist is None, f'4. Featurelist using `{wrong_featurelist_name}` to search was found (it should not have found a featurelist...?)'
+
+    # 5. Name is provided and fetches more than one featurelist
+    substring = conf.featurelist_name[:-4]
+    bc_featurelist = rapa.utils.get_featurelist(substring, bc_project)
+    assert bc_featurelist is not None, f'5. Search for featurelist using `{substring}` was not found (meant to find multiple featurelists)'
 
 # test getting the starred model
 @pytest.mark.order(4)
