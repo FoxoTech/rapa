@@ -1,1 +1,1 @@
-from . import conf
+from .. import conf

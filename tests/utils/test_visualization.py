@@ -1,4 +1,4 @@
-from . import conf
+from .. import conf
 
 import pytest
 
