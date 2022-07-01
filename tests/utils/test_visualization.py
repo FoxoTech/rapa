@@ -15,8 +15,9 @@ def test_plot_feature_performance_stackplot():
     '''
     for project, metric, vlines in [(conf.project_name, 'mean', True)]:
         rapa.utils.feature_performance_stackplot(project, featurelist_prefix=conf.featurelist_prefix,\
-                                                starting_featurelist=None, feature_impact_metric=metric,\
-                                                metric='AUC', vlines=vlines, starting_featurelist=conf.starting_featurelist_name)
+                                                feature_impact_metric=metric,\
+                                                metric='AUC', vlines=vlines,\
+                                                starting_featurelist=conf.starting_featurelist_name)
     '''
     [(project_name, 'mean', False),\
     (rapa.utils.find_project(project_name), 'mean', False),\
