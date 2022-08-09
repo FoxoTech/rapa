@@ -65,7 +65,7 @@ def test_api_initialization():
     # 3. try connecting with a wrong api key
     try:
         retval = rapa.utils.initialize_dr_api('wrong', pkl_file_name)
-    except ValueError:
+    except Exception:
         # this is expected
         pass
 
