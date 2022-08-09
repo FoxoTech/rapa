@@ -27,6 +27,12 @@ def test_api_initialization():
     '''Checks that the api can be connected with `utils.initialize_dr_api`.
 
     Currently only checks the default endpoint: https://app.datarobot.com/api/v2.
+
+    Tests different situations:
+        1. try connecting without a file
+        2. try connecting with the wrong dictionary key
+        3. try connecting with a wrong api key
+        4. try connecting correctly
     '''
     pkl_file_name = 'dr-tokens.pkl'
 
@@ -44,19 +50,26 @@ def test_api_initialization():
     
     dr_test_api_key = os.environ.get('DR_TEST_RAPA') # get the api key
 
-    ## create the pickle file
-    pickle.dump({'test':dr_test_api_key}, open(pkl_file_name, 'wb'))
+    # 1. create the pickle file
+    pickle.dump({'test':dr_test_api_key, 'wrong':'1234'}, open(pkl_file_name, 'wb'))
 
     del dr_test_api_key # delete the api key for security reasons ..?
 
-    ## try connecting with the wrong key
+    # 2. try connecting with the wrong dictionary key
     try:
         retval = rapa.utils.initialize_dr_api('ohno', pkl_file_name)
     except KeyError:
         # this is expected
         pass
 
-    ## try connecting correctly
+    # 3. try connecting with a wrong api key
+    try:
+        retval = rapa.utils.initialize_dr_api('wrong', pkl_file_name)
+    except ValueError:
+        # this is expected
+        pass
+
+    # 4. try connecting correctly
     try:
         retval = rapa.utils.initialize_dr_api('test', pkl_file_name)
     except ValueError:
@@ -173,10 +186,34 @@ def test_datarobot_starred_model_retrieval():
 @pytest.mark.order(5)
 def test_datarobot_best_model_retrieval():
     '''Tests that `rapa` retrieves the best model from Datarobot
+
+    Tests different situations:
+        1. it gets the best model
+        2. gets the best of two starred models
+        3. gets best model with prefix
     '''
     bc_project = rapa.utils.find_project(conf.project_name)
 
+    # 1. gets best model
     bc_best_model = rapa.utils.get_best_model(bc_project, metric='AUC')
+    assert bc_best_model is not None, f'No best model found for `{conf.project_name}`. Check the project still exists.'
+    assert conf.best_AUC_model_id == bc_best_model.id
+    assert type(bc_best_model) is dr.Model
+
+    # 2. gets the best of two starred models
+    
+    temporary_starred_model = dr.models.Model.get(bc_project, '62b5e1aeddc5c75c4d91cf84')
+    # temporarily star the best model
+    temporary_starred_model.star_model()
+    bc_best_model = rapa.utils.get_best_model(bc_project, starred=True)
+    temporary_starred_model.unstar_model()
+
+    assert bc_best_model is not None, f'No best model found for `{conf.project_name}`. Check the project still exists.'
+    assert conf.best_AUC_model_id == bc_best_model.id
+    assert type(bc_best_model) is dr.Model
+
+    # 3. gets best model with prefix
+    bc_best_model = rapa.utils.get_best_model(bc_project, metric='AUC', featurelist_prefix='TEST')
     assert bc_best_model is not None, f'No best model found for `{conf.project_name}`. Check the project still exists.'
     assert conf.best_AUC_model_id == bc_best_model.id
     assert type(bc_best_model) is dr.Model
