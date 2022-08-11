@@ -46,12 +46,9 @@ class RAPABase():
     * target_type = None # Set at initialization
     * project = None # Set at initialization or with 'perform_parsimony()'"""
 
-    def __init__(self, project: Union[dr.Project, str] = None):
+    def __init__(self):
         if self.__class__.__name__ == "RAPABase":
             raise RuntimeError("Do not instantiate the RAPABase class directly; use RAPAClassif or RAPARegress")
-        self._classification = None
-        self.target_type = None
-        self.project = None
 
     @staticmethod
     def _wait_for_jobs(project: dr.Project, progress_bar: bool = True, sleep_time: int = 5, pbar = None, pbar_prefix: str = '', job_type: str = '', timeout = 21600):

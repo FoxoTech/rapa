@@ -7,7 +7,6 @@ def test_RAPABase_initialization():
     should be initialized with a child class.
 
     1. Tests that the rapa.base.RAPABase class cannot be initialized directly
-    2. Tests that the rapa.base.RAPABase can be initialized through a child class
     '''
 
     # 1. Tests that the rapa.base.RAPABase class cannot be initialized directly
@@ -18,6 +17,3 @@ def test_RAPABase_initialization():
         pass
     else:
         raise Exception("`rapa` base class was initialied directly.")
-        
-
-        

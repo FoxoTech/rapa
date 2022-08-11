@@ -9,3 +9,5 @@ starting_featurelist_name = 'Informative Features'
 starred_model_id = '62b5e1aeddc5c75c4d91cf7a'
 
 best_AUC_model_id = '62b5e1aeddc5c75c4d91cf84'
+
+random_state = 6
