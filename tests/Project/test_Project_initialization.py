@@ -87,7 +87,7 @@ def test_creating_submittable_dataframe():
                                                             random_state=conf.random_state,
                                                             n_features=n_features)
     # checking that the correct number of featres exists
-    assert sub_df.columns.isin(breast_cancer_df.columns).sum() == n_features
+    assert sub_df.columns.isin(breast_cancer_df.columns).sum() == n_features+1
     # check the number of splits
     assert len(sub_df["partition"].value_counts()) == n_splits
 

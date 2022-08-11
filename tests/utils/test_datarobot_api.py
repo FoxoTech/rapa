@@ -205,8 +205,7 @@ def test_datarobot_best_model_retrieval():
     assert type(bc_best_model) is dr.Model
 
     # 2. gets the best of two starred models
-    
-    temporary_starred_model = dr.models.Model.get(bc_project, '62b5e1aeddc5c75c4d91cf84')
+    temporary_starred_model = dr.models.Model.get(bc_project.id, '62b5e1aeddc5c75c4d91cf84')
     # temporarily star the best model
     temporary_starred_model.star_model()
     bc_best_model = rapa.utils.get_best_model(bc_project, starred=True)
