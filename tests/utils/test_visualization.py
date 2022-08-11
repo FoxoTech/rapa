@@ -40,6 +40,8 @@ def test_plot_feature_performance_stackplot():
     except Exception:
         # this is expected
         pass
+    else:
+        raise Exception("The plot was somehow created when given a wrong metric")
     '''
     [(project_name, 'mean', False),\
     (rapa.utils.find_project(project_name), 'mean', False),\
