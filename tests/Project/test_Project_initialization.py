@@ -140,7 +140,7 @@ def test_submitting_datarobot_project():
                                                             random_state=conf.random_state)
     project = bc_classification.submit_datarobot_project(sub_df,
                                                         target,
-                                                        created_project_name+'_classification',
+                                                        created_project_name+'_classification1',
                                                         mode=dr.AUTOPILOT_MODE.QUICK,
                                                         random_state=conf.random_state)
     bc_classification._wait_for_jobs(project=project, progress_bar=False)
@@ -155,7 +155,7 @@ def test_submitting_datarobot_project():
                                                             random_state=conf.random_state)
     project = bc_regression.submit_datarobot_project(sub_df,
                                                         regression_target,
-                                                        created_project_name+'_regression',
+                                                        created_project_name+'_regression1',
                                                         mode=dr.AUTOPILOT_MODE.QUICK,
                                                         random_state=conf.random_state)
     bc_regression._wait_for_jobs(project=project, progress_bar=False)
