@@ -140,11 +140,11 @@ def test_submitting_datarobot_project():
                                                             random_state=conf.random_state)
     project = bc_classification.submit_datarobot_project(sub_df,
                                                         target,
-                                                        created_project_name+'_classification1',
+                                                        created_project_name+'_classification',
                                                         mode=dr.AUTOPILOT_MODE.QUICK,
                                                         random_state=conf.random_state)
     bc_classification._wait_for_jobs(project=project, progress_bar=False)
-    #project.delete()
+    project.delete()
     
 
     # 2. regression project (target is worst area)
@@ -155,9 +155,9 @@ def test_submitting_datarobot_project():
                                                             random_state=conf.random_state)
     project = bc_regression.submit_datarobot_project(sub_df,
                                                         regression_target,
-                                                        created_project_name+'_regression1',
+                                                        created_project_name+'_regression',
                                                         mode=dr.AUTOPILOT_MODE.QUICK,
                                                         random_state=conf.random_state)
     bc_regression._wait_for_jobs(project=project, progress_bar=False)
-    #project.delete()
+    project.delete()
 
