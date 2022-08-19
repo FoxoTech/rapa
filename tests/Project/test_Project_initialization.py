@@ -1,3 +1,4 @@
+from tkinter.ttk import Progressbar
 import pytest
 import rapa
 import os
@@ -30,7 +31,7 @@ breast_cancer_df[target] = breast_cancer_dataset['target']
 
 
 # initialize dr api
-@pytest.mark.order(1)
+@pytest.mark.order(8)
 def test_datarobot_api_initialization():
     """Tests that the datarobot api can be initialized with the test api key.
     Also serves to initialize the api so tests can run...
@@ -44,7 +45,7 @@ def test_datarobot_api_initialization():
 
 
 # test rapa.Project initialization
-@pytest.mark.order(2)
+@pytest.mark.order(9)
 def test_Project_initialization():
     """Checks that the rapa.Project objects can be initialized with each instance of arguments
     """
@@ -55,7 +56,7 @@ def test_Project_initialization():
     assert rapa_test_regression_project._regression == True and rapa_test_regression_project._classification == False
 
 # test creating a submittable dataframe
-@pytest.mark.order(3)
+@pytest.mark.order(10)
 def test_creating_submittable_dataframe():
     """Checks that rapa correctly makes a submittable dataframe.
 
@@ -118,12 +119,43 @@ def test_creating_submittable_dataframe():
         raise Exception(f"A submittable df was created with the target {absent_target}")
 
     
-@pytest.mark.order(4)
+@pytest.mark.order(11)
 def test_submitting_datarobot_project():
     """Tests submitting a datarobot project using rapa.
 
+        NOTE: this takes a while due to the 
+
         1. classification project
+        2. regression project
     """
 
-    bc_classification = rapa.Project.Classification()
+    bc_classification = rapa.Project.Classification()  # rapa classification project
+    bc_regression = rapa.Project.Regression()  # rapa classification project
+    
+    # 1. classification project
+    sub_df = bc_classification.create_submittable_dataframe(breast_cancer_df,
+                                                            target_name=target,
+                                                            n_splits=6,
+                                                            random_state=conf.random_state)
+    project = bc_classification.submit_datarobot_project(sub_df,
+                                                        target,
+                                                        created_project_name+'_classification',
+                                                        mode=dr.AUTOPILOT_MODE.QUICK,
+                                                        random_state=conf.random_state)
+    bc_classification._wait_for_jobs(project=project, progress_bar=False)
+    #project.delete()
+    
+
+    # 2. regression project
+    sub_df = bc_regression.create_submittable_dataframe(breast_cancer_df,
+                                                            target_name=target,
+                                                            n_splits=6,
+                                                            random_state=conf.random_state)
+    project = bc_regression.submit_datarobot_project(sub_df,
+                                                        target,
+                                                        created_project_name+'_regression',
+                                                        mode=dr.AUTOPILOT_MODE.QUICK,
+                                                        random_state=conf.random_state)
+    bc_regression._wait_for_jobs(project=project, progress_bar=False)
+    #project.delete()
 
