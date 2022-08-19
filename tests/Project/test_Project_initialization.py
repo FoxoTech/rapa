@@ -21,6 +21,7 @@ created_project_name = f"GA_TESTS rapa=={rapa.version.__version__}"
 n_splits = 6
 n_features = 20
 target = "benign"
+regression_target = "worst area"
 
 # loads the dataset (as a dictionary)
 breast_cancer_dataset = datasets.load_breast_cancer()
@@ -146,13 +147,14 @@ def test_submitting_datarobot_project():
     #project.delete()
     
 
-    # 2. regression project
+    # 2. regression project (target is worst area)
+    
     sub_df = bc_regression.create_submittable_dataframe(breast_cancer_df,
-                                                            target_name=target,
+                                                            target_name=regression_target,
                                                             n_splits=6,
                                                             random_state=conf.random_state)
     project = bc_regression.submit_datarobot_project(sub_df,
-                                                        target,
+                                                        regression_target,
                                                         created_project_name+'_regression',
                                                         mode=dr.AUTOPILOT_MODE.QUICK,
                                                         random_state=conf.random_state)
