@@ -238,9 +238,9 @@ def get_best_model(project: dr.Project,
 
     # check that there are any models
     if len(scores) > 1: # multiple models
-        return sorted(scores, key=lambda tup: tup[0], reverse=not highest)[0][1] # sort by first item in the tuples
+        return sorted(scores, key=lambda tup: tup[0], reverse=highest)[0][1] # sort by first item in the tuples
     elif len(scores) == 1: # one model
-        return scores[0] 
+        return scores[0][1]
     else: # no models
         raise Exception(f"No models found. \n Parameters: project=`{project}`, metric=`{metric}`, fold=`{fold}`, featurelist_prefix=`{featurelist_prefix}`, starred=`{starred}`, highest=`{highest}`")
 
