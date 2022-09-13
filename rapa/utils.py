@@ -59,11 +59,12 @@ def find_project(project: str) -> dr.Project:
             return project_list[0]
     
 
-# if changing get_best_model, check if it's alias get_starred_model needs changing
+'''# if changing get_best_model, check if it's alias get_starred_model needs changing
 def get_best_model(project: dr.Project, 
                 featurelist_prefix: str = None, 
                 starred: bool = False, 
-                metric: str = 'AUC') -> dr.Model:
+                metric: str = 'AUC',
+                data: str = 'crossValidation') -> dr.Model:
     """Attempts to find the 'best' model in a datarobot by searching cross validation scores of all the
     models in a supplied project. # TODO make dictionary for minimize/maximize 
 
@@ -149,7 +150,100 @@ def get_best_model(project: dr.Project,
             warn(f'There were no cross-validated models in "{project}"')
             return None
         else:
-            return averages[sorted(averages.keys())[-1]] # highest metric is 'best' TODO: support the other metrics
+            return averages[sorted(averages.keys())[-1]] # highest metric is 'best' TODO: support the other metrics'''
+
+def get_best_model(project: dr.Project, 
+                    featurelist_prefix: str = None, 
+                    starred: bool = False, 
+                    metric: str = 'AUC',
+                    fold: str = 'crossValidation',
+                    highest: bool = True) -> dr.Model:
+    """Attempts to find the 'best' model in a datarobot by searching cross validation scores of all the
+    models in a supplied project. # TODO make dictionary for minimize/maximize 
+
+    CURRENTLY SUPPORTS METRICS WHERE HIGHER = BETTER
+
+    .. warning:: 
+        Actually finding the 'best' model takes more than averageing cross validation
+        scores, and it is suggested that the 'best' model is decided and starred in DataRobot.
+        (Make sure 'starred = True' if starring the 'best' model) 
+
+    .. note::
+        Some models may not have scores for the supplied fold because they were not run. These
+        models are ignored by this function. Make sure all models of interest have scores for
+        the fold being provided if those models should be considered.
+
+    :Parameters:
+    ----------
+        project: datarobot.Project
+            The project object that will be searched for the 'best' model
+
+        featurelist_prefix: str, optional (default = None)
+            The desired featurelist prefix used to search in for models using specific
+            rapa featurelists
+
+        starred: bool, optional (default = False)
+            If True, return the starred model. If there are more than one starred models,
+            then warn the user and return the 'best' one
+
+        metric: str, optional (default = 'AUC')
+            What model cross validation metric to use when averaging scores
+        
+        fold: str, optional (default = 'crossValidation')
+            The fold of data used in DataRobot. Options are as follows:
+                ['validation', 
+                'crossValidation', 
+                'holdout', 
+                'training', 
+                'backtestingScores', 
+                'backtesting']
+        
+        highest: bool, optional (default = True)
+            Whether to take the highest value (highest = True), or the lowest
+            value (highest = False). Change this when using metrics where lower
+            is better
+    
+    :Returns:
+    ----------
+        datarobot.Model
+            A datarobot model that is either the 'best', starred, or the 'best' of the starred models
+            from the provided datarobot project
+    """
+    scores = []
+
+    #### get scores
+
+    # set featurelist_prefix to '' for ease of use in code
+    if not starred: # the model(s) is/are not starred
+        if featurelist_prefix == None: 
+            featurelist_prefix = ''
+
+        for model in project.get_models():
+            current_model_score = model.metrics[metric][fold] # get the score for the metric and fold
+
+            if model.featurelist_name.startswith(featurelist_prefix) and current_model_score: # if the model is scored in this fold, and it was created with the featurelist we are looking at
+                scores.append((current_model_score, model)) # add the model score and model object to a list
+    else: # the model(s) is/are starred
+        if featurelist_prefix == None: 
+            featurelist_prefix = ''
+
+        for model in project.get_models():
+            current_model_score = model.metrics[metric][fold] # get the score for the metric and fold
+
+            if model.is_starred and model.featurelist_name.startswith(featurelist_prefix) and current_model_score: # if the model is scored in this fold, and it was created with the featurelist we are looking at
+                scores.append((current_model_score, model)) # add the model score and model object to a list
+
+
+    #### find the best scores
+
+    # check that there are any models
+    if len(scores) > 1: # multiple models
+        return sorted(scores, key=lambda tup: tup[0], reverse=not highest)[0][1] # sort by first item in the tuples
+    elif len(scores) == 1: # one model
+        return scores[0] 
+    else: # no models
+        raise Exception(f"No models found. \n Parameters: project=`{project}`, metric=`{metric}`, fold=`{fold}`, featurelist_prefix=`{featurelist_prefix}`, starred=`{starred}`, highest=`{highest}`")
+
 
 # alias for get_best_model
 def get_starred_model(project: dr.Project, 
