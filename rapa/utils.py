@@ -64,7 +64,7 @@ def get_best_model(project: dr.Project,
                     starred: bool = False, 
                     metric: str = None,
                     fold: str = 'crossValidation',
-                    highest: bool = True) -> dr.Model:
+                    highest: bool = None) -> dr.Model:
     """Attempts to find the 'best' model in a datarobot by searching cross validation scores of all the
     models in a supplied project. # TODO make dictionary for minimize/maximize 
 
@@ -105,10 +105,9 @@ def get_best_model(project: dr.Project,
                 'backtestingScores', 
                 'backtesting']
         
-        highest: bool, optional (default = True)
+        highest: bool, optional (default for classification = True, default for regression = False)
             Whether to take the highest value (highest = True), or the lowest
-            value (highest = False). Change this when using metrics where lower
-            is better
+            value (highest = False). Change this when assumed switch is 
     
     :Returns:
     ----------
@@ -125,8 +124,14 @@ def get_best_model(project: dr.Project,
         elif project.target_type == dr.TARGET_TYPE.REGRESSION:
             # regression
             metric = 'RMSE'
-            highest = False
 
+    # if highest is missing, assume a direction
+    if highest == None:
+        if project.target_type == dr.TARGET_TYPE.BINARY or project.target_type == dr.TARGET_TYPE.MULTICLASS:
+            # classification
+            highest = True
+        elif project.target_type == dr.TARGET_TYPE.REGRESSION:
+            highest = False
 
     scores = []
 

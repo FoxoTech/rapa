@@ -10,7 +10,7 @@ regression_starred_model_id = '62b5e1aeddc5c75c4d91cf7a'
 best_RMSE_model_id = '62ffd77ce69bf60110cee63c'
 
 # prefix for testing
-featurelist_prefix = 'TEST'
+featurelist_prefix = 'TEST_0.0.9'
 featurelist_name = featurelist_prefix + ' (25)'
 featurelist_id = '62b5de67a92c8927b1fd710b'
 starting_featurelist_name = 'Informative Features'
