@@ -100,35 +100,35 @@ def test_datarobot_project_retrieval():
     '''
 
     # 1. Name provided matches project name exactly, and only one project exists with that name
-    bc_project = rapa.utils.find_project(conf.project_name)
-    assert bc_project is not None, f'1. Project using exact name not found (check that `{conf.project_name}` still exists)'
-    assert conf.project_id == bc_project.id
-    assert type(bc_project) is dr.Project
+    bc_classification_project = rapa.utils.find_project(conf.classification_project_name)
+    assert bc_classification_project is not None, f'1. Project using exact name not found (check that `{conf.classification_project_name}` still exists)'
+    assert conf.classification_project_id == bc_classification_project.id
+    assert type(bc_classification_project) is dr.Project
 
     # 2. Project ID is provided, and there exists a project with that ID
-    bc_project = rapa.utils.find_project(conf.project_id)
-    assert bc_project is not None, f'2. Project using {conf.project_id} not found (check that `{conf.project_name}` still exists)'
-    assert conf.project_id == bc_project.id
-    assert type(bc_project) is dr.Project
+    bc_classification_project = rapa.utils.find_project(conf.classification_project_id)
+    assert bc_classification_project is not None, f'2. Project using {conf.classification_project_id} not found (check that `{conf.classification_project_name}` still exists)'
+    assert conf.classification_project_id == bc_classification_project.id
+    assert type(bc_classification_project) is dr.Project
 
     # 3. Name provided fetches one project, but not exact
-    substring = conf.project_name[:12]
-    bc_project = rapa.utils.find_project(substring)
-    assert bc_project is not None, f'3. Project using {substring} not found (check that `{conf.project_name}` still exists)'
-    assert conf.project_id == bc_project.id
-    assert type(bc_project) is dr.Project
+    substring = conf.classification_project_name[:12]
+    bc_classification_project = rapa.utils.find_project(substring)
+    assert bc_classification_project is not None, f'3. Project using {substring} not found (check that `{conf.classification_project_name}` still exists)'
+    assert conf.classification_project_id == bc_classification_project.id
+    assert type(bc_classification_project) is dr.Project
 
     # 4. Name provided fetches more than one project
-    substring = conf.project_name[:5]
-    bc_project = rapa.utils.find_project(substring)
-    assert bc_project is not None, f'4. Project using {substring} not found (check that `{conf.project_name}` still exists)'
-    assert conf.project_id == bc_project.id
-    assert type(bc_project) is dr.Project
+    substring = conf.classification_project_name[:5]
+    bc_classification_project = rapa.utils.find_project(substring)
+    assert bc_classification_project is not None, f'4. Project using {substring} not found (check that `{conf.classification_project_name}` still exists)'
+    assert conf.classification_project_id == bc_classification_project.id
+    assert type(bc_classification_project) is dr.Project
 
     # 5. Name provided fetches no project
-    wrong_project_name = conf.project_name + 'string'
-    bc_project = rapa.utils.find_project(wrong_project_name)
-    assert bc_project is None, f'5. Project using {wrong_project_name} was found (it should not have found a project...?)'
+    wrong_project_name = conf.classification_project_name + 'string'
+    bc_classification_project = rapa.utils.find_project(wrong_project_name)
+    assert bc_classification_project is None, f'5. Project using {wrong_project_name} was found (it should not have found a project...?)'
 
 # test retrieval of featurelists
 @pytest.mark.order(3)
@@ -142,36 +142,36 @@ def test_datarobot_featurelist_retrieval():
         4. Name is provided and fetches no featurelist
         5. Name is provided and fetches more than one featurelist
     '''
-    bc_project = rapa.utils.find_project(conf.project_name)
+    bc_classification_project = rapa.utils.find_project(conf.classification_project_name)
 
     # 1. Name is provided exactly
-    bc_featurelist = rapa.utils.get_featurelist(conf.featurelist_name, bc_project)
-    assert bc_featurelist is not None, f'1. The name provided: `{conf.featurelist_name}` did not yield any results (check that `{conf.project_name}` still exists)'
+    bc_featurelist = rapa.utils.get_featurelist(conf.featurelist_name, bc_classification_project)
+    assert bc_featurelist is not None, f'1. The name provided: `{conf.featurelist_name}` did not yield any results (check that `{conf.classification_project_name}` still exists)'
     assert conf.featurelist_id == bc_featurelist.id
     assert type(bc_featurelist) is dr.Featurelist
 
     # 2. Featurelist id is provided
     
-    bc_featurelist = rapa.utils.get_featurelist(conf.featurelist_id, bc_project)
-    assert bc_featurelist is not None, f'2. The id provided: `{conf.featurelist_id}` did not yield any results (check that `{conf.project_name}` still exists)'
+    bc_featurelist = rapa.utils.get_featurelist(conf.featurelist_id, bc_classification_project)
+    assert bc_featurelist is not None, f'2. The id provided: `{conf.featurelist_id}` did not yield any results (check that `{conf.classification_project_name}` still exists)'
     assert conf.featurelist_id == bc_featurelist.id
     assert type(bc_featurelist) is dr.Featurelist
 
     # 3. Name is provided inexactly
     substring = conf.featurelist_name[:-1]
-    bc_featurelist = rapa.utils.get_featurelist(substring, bc_project)
-    assert bc_featurelist is not None, f'3. The name provided: `{conf.featurelist_name}` did not yield any results (check that `{conf.project_name}` still exists)'
+    bc_featurelist = rapa.utils.get_featurelist(substring, bc_classification_project)
+    assert bc_featurelist is not None, f'3. The name provided: `{conf.featurelist_name}` did not yield any results (check that `{conf.classification_project_name}` still exists)'
     assert conf.featurelist_id == bc_featurelist.id
     assert type(bc_featurelist) is dr.Featurelist
 
     # 4. Name is provided and fetches no featurelist
     wrong_featurelist_name = conf.featurelist_name + 'j923ifnoguhe'
-    bc_featurelist = rapa.utils.get_featurelist(wrong_featurelist_name, bc_project)
+    bc_featurelist = rapa.utils.get_featurelist(wrong_featurelist_name, bc_classification_project)
     assert bc_featurelist is None, f'4. Featurelist using `{wrong_featurelist_name}` to search was found (it should not have found a featurelist...?)'
 
     # 5. Name is provided and fetches more than one featurelist
     substring = conf.featurelist_name[:-4]
-    bc_featurelist = rapa.utils.get_featurelist(substring, bc_project)
+    bc_featurelist = rapa.utils.get_featurelist(substring, bc_classification_project)
     assert bc_featurelist is not None, f'5. Search for featurelist using `{substring}` was not found (meant to find multiple featurelists)'
 
 # test getting the starred model
@@ -179,12 +179,21 @@ def test_datarobot_featurelist_retrieval():
 def test_datarobot_starred_model_retrieval():
     '''Tests that `rapa` can retrieve a starred model from DataRobot
     '''
-    bc_project = rapa.utils.find_project(conf.project_name)
+    # classification
+    bc_classification_project = rapa.utils.find_project(conf.classification_project_name)
     
-    bc_starred_model = rapa.utils.get_starred_model(bc_project)
-    assert bc_starred_model is not None, f'No starred model found for `{conf.project_name}` when the Python `Logistic Regression` model should be starred.'
-    assert conf.starred_model_id == bc_starred_model.id
-    assert type(bc_starred_model) is dr.Model
+    bc_classification_starred_model = rapa.utils.get_starred_model(bc_classification_project)
+    assert bc_classification_starred_model is not None, f'No starred model found for `{conf.classification_project_name}` when the Python `Logistic Regression` model should be starred.'
+    assert conf.classification_starred_model_id == bc_classification_starred_model.id
+    assert type(bc_classification_starred_model) is dr.Model
+
+    # regression
+    bc_regression_project = rapa.utils.find_project(conf.regression_project_name)
+    
+    bc_regression_starred_model = rapa.utils.get_starred_model(bc_regression_project)
+    assert bc_regression_starred_model is not None, f'No starred model found for `{conf.regression_project_name}` when the Python `Logistic Regression` model should be starred.'
+    assert conf.regression_starred_model_id == bc_regression_starred_model.id
+    assert type(bc_regression_starred_model) is dr.Model
 
 # test getting the best model for AUC
 @pytest.mark.order(5)
@@ -196,27 +205,45 @@ def test_datarobot_best_model_retrieval():
         2. gets the best of two starred models
         3. gets best model with prefix
     '''
-    bc_project = rapa.utils.find_project(conf.project_name)
+
+    # classification
+    bc_classification_project = rapa.utils.find_project(conf.classification_project_name)
 
     # 1. gets best model
-    bc_best_model = rapa.utils.get_best_model(bc_project, metric='AUC')
-    assert bc_best_model is not None, f'No best model found for `{conf.project_name}`. Check the project still exists.'
-    assert conf.best_AUC_model_id == bc_best_model.id
-    assert type(bc_best_model) is dr.Model
+    bc_best_classification_model = rapa.utils.get_best_model(bc_classification_project, metric='AUC')
+    assert bc_best_classification_model is not None, f'No best model found for `{conf.classification_project_name}`. Check the project still exists.'
+    assert conf.best_AUC_model_id == bc_best_classification_model.id
+    assert type(bc_best_classification_model) is dr.Model
 
     # 2. gets the best of two starred models
-    temporary_starred_model = dr.models.Model.get(bc_project.id, '62b5e1aeddc5c75c4d91cf84')
+    temporary_starred_model = dr.models.Model.get(bc_classification_project.id, '62b5e1aeddc5c75c4d91cf84')
     # temporarily star the best model
     temporary_starred_model.star_model()
-    bc_best_model = rapa.utils.get_best_model(bc_project, starred=True)
+    bc_best_classification_model = rapa.utils.get_best_model(bc_classification_project, starred=True)
     temporary_starred_model.unstar_model()
 
-    assert bc_best_model is not None, f'No best model found for `{conf.project_name}`. Check the project still exists.'
-    assert conf.best_AUC_model_id == bc_best_model.id
-    assert type(bc_best_model) is dr.Model
+    assert bc_best_classification_model is not None, f'No best model found for `{conf.classification_project_name}`. Check the project still exists.'
+    assert conf.best_AUC_model_id == bc_best_classification_model.id
+    assert type(bc_best_classification_model) is dr.Model
 
     # 3. gets best model with prefix
-    bc_best_model = rapa.utils.get_best_model(bc_project, metric='AUC', featurelist_prefix='TEST')
-    assert bc_best_model is not None, f'No best model found for `{conf.project_name}`. Check the project still exists.'
-    assert conf.best_AUC_model_id == bc_best_model.id
-    assert type(bc_best_model) is dr.Model
+    bc_best_classification_model = rapa.utils.get_best_model(bc_classification_project, metric='AUC', featurelist_prefix='TEST')
+    assert bc_best_classification_model is not None, f'No best model found for `{conf.classification_project_name}`. Check the project still exists.'
+    assert conf.best_AUC_model_id == bc_best_classification_model.id
+    assert type(bc_best_classification_model) is dr.Model
+
+    # regression
+    bc_regression_project = rapa.utils.find_project(conf.regression_project_name)
+
+    # 1. gets best model
+    bc_best_regression_model = rapa.utils.get_best_model(bc_regression_project, metric='RMSE', highest=False)
+    assert bc_best_regression_model is not None, f'No best model found for `{conf.regression_project_name}`. Check the project still exists.'
+    assert conf.best_RMSE_model_id == bc_best_regression_model.id
+    assert type(bc_best_regression_model) is dr.Model
+
+
+    # 3. gets best model with prefix
+    bc_best_regression_model = rapa.utils.get_best_model(bc_regression_project, metric='RMSE', featurelist_prefix='Informative Features - Leakage Removed')
+    assert bc_best_regression_model is not None, f'No best model found for `{conf.regression_project_name}`. Check the project still exists.'
+    assert conf.best_RMSE_model_id == bc_best_regression_model.id
+    assert type(bc_best_regression_model) is dr.Model

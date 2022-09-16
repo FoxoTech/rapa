@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import seaborn as sb
 
 LOGGER = logging.getLogger(__name__)
-
+    
 
 def find_project(project: str) -> dr.Project:
     """Uses the DataRobot api to find a current project.
@@ -62,7 +62,7 @@ def find_project(project: str) -> dr.Project:
 def get_best_model(project: dr.Project, 
                     featurelist_prefix: str = None, 
                     starred: bool = False, 
-                    metric: str = 'AUC',
+                    metric: str = None,
                     fold: str = 'crossValidation',
                     highest: bool = True) -> dr.Model:
     """Attempts to find the 'best' model in a datarobot by searching cross validation scores of all the
@@ -93,8 +93,8 @@ def get_best_model(project: dr.Project,
             If True, return the starred model. If there are more than one starred models,
             then warn the user and return the 'best' one
 
-        metric: str, optional (default = 'AUC')
-            What model cross validation metric to use when averaging scores
+        metric: str, optional (default = 'AUC' or 'RMSE') [classification and regression]
+            What model metric to use when finding the 'best'
         
         fold: str, optional (default = 'crossValidation')
             The fold of data used in DataRobot. Options are as follows:
@@ -116,6 +116,18 @@ def get_best_model(project: dr.Project,
             A datarobot model that is either the 'best', starred, or the 'best' of the starred models
             from the provided datarobot project
     """
+    
+    # if metric is missing, assume a metric
+    if metric == None:
+        if project.target_type == dr.TARGET_TYPE.BINARY or project.target_type == dr.TARGET_TYPE.MULTICLASS:
+            # classification
+            metric = 'AUC'
+        elif project.target_type == dr.TARGET_TYPE.REGRESSION:
+            # regression
+            metric = 'RMSE'
+            highest = False
+
+
     scores = []
 
     #### get scores
@@ -154,7 +166,7 @@ def get_best_model(project: dr.Project,
 
 # alias for get_best_model
 def get_starred_model(project: dr.Project, 
-                    metric: str = 'AUC',
+                    metric: str = None,
                     featurelist_prefix: str = None) -> dr.Model:
     """Alias for rapa.utils.get_best_model() but makes starred = True
     """
@@ -245,7 +257,7 @@ def get_featurelist(featurelist: str,
 def parsimony_performance_boxplot(project: dr.Project, 
                                 featurelist_prefix: str = 'RAPA Reduced to',
                                 starting_featurelist: str = None,
-                                metric: str = 'AUC',
+                                metric: str = None,
                                 split: str = 'crossValidation',
                                 featurelist_lengths: list = None):
     """Uses `seaborn`'s `boxplot` function to plot featurelist size vs performance
@@ -265,7 +277,7 @@ def parsimony_performance_boxplot(project: dr.Project,
             The starting featurelist used for parsimony analysis. If None, only
             the featurelists with the desired prefix in `featurelist_prefix` will be plotted
 
-        metric: str, optional (default = 'AUC')
+        metric: str, optional (default = 'AUC' or 'RMSE') [classification and regression]
             The metric used for plotting accuracy of models
 
         split: str, optional (default = 'crossValidation')
@@ -282,6 +294,15 @@ def parsimony_performance_boxplot(project: dr.Project,
     # if `project` is a string, find the project
     if type(project) is str:
         project = find_project(project)
+
+    # if metric is missing, assume a metric
+    if metric == None:
+        if project.target_type == dr.TARGET_TYPE.BINARY or project.target_type == dr.TARGET_TYPE.MULTICLASS:
+            # classification
+            metric = 'AUC'
+        elif project.target_type == dr.TARGET_TYPE.REGRESSION:
+            # regression
+            metric = 'RMSE'
 
 
     datarobot_project_models = project.get_models() # get all the models in the provided project
@@ -331,7 +352,7 @@ def feature_performance_stackplot(project: dr.Project,
                                 featurelist_prefix: str = 'RAPA Reduced to',
                                 starting_featurelist: str = None,
                                 feature_impact_metric: str = 'median',
-                                metric: str = 'AUC',
+                                metric: str = None,
                                 vlines: bool = False):
     """Utilizes `matplotlib.pyplot.stackplot` to show feature performance during 
     parsimony analysis.
@@ -357,7 +378,7 @@ def feature_performance_stackplot(project: dr.Project,
                 * mean
                 * cumulative
 
-        metric: str, optional (default = 'AUC')
+        metric: str, optional (default = 'AUC' or 'RMSE') [classification and regression]
             Which metric to use when finding feature importance of each model
         
         vlines: bool, optional (default = False)
@@ -370,6 +391,15 @@ def feature_performance_stackplot(project: dr.Project,
     # if `project` is a string, find the project
     if type(project) is str:
         project = find_project(project)
+
+    # if metric is missing, assume a metric
+    if metric == None:
+        if project.target_type == dr.TARGET_TYPE.BINARY or project.target_type == dr.TARGET_TYPE.MULTICLASS:
+            # classification
+            metric = 'AUC'
+        elif project.target_type == dr.TARGET_TYPE.REGRESSION:
+            # regression
+            metric = 'RMSE'
     
     if starting_featurelist:
         if type(starting_featurelist) == str:
