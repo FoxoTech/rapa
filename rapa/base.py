@@ -510,10 +510,7 @@ class RAPABase():
                 raise Exception(f'Could not find the project.')
         
         # get starting featurelist
-        try:
-            starting_featurelist = utils.get_featurelist(starting_featurelist_name, project)
-        except: # TODO: flesh out exceptions
-            tqdm.write("Something went wrong getting the starting featurelist...")
+        starting_featurelist = utils.get_featurelist(starting_featurelist_name, project)
 
         # check feature_range size
         if len(feature_range) == 0:

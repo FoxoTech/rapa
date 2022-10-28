@@ -50,8 +50,7 @@ def find_project(project: str) -> dr.Project:
     except ClientError: # id was not provided, most likely a name
         project_list = dr.Project.list(search_params={'project_name': project})
         if len(project_list) == 0: # probably wrong id, check id?
-            warn(f"No projects found with id or search for \'{project}\'")
-            return None
+            raise Exception(f"No projects found with id/string of \'{project}\'")
         elif len(project_list) == 1: # found one project with search, good
             return project_list[0]
         else: # more than one project was found
