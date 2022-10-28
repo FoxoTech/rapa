@@ -250,8 +250,7 @@ def get_featurelist(featurelist: str,
     else: # if dr_featurelist is empty
         dr_featurelist = [x for x in featurelists if featurelist.lower() in str(x.name).lower()] # use python's `in` to search strings
         if not dr_featurelist: # if dr_featurelist is empty
-            warn(f'No featurelists were found with either the id or name of \'{featurelist}\'')
-            return None
+            raise Exception(f"No featurelists were found with the id/name of \'{featurelist}\'")
         elif len(dr_featurelist) > 1: # if dr_featurelist has more than 1
             warn(f'More than one featurelist was found: \'{dr_featurelist}\', returning the first.')
             return dr_featurelist[0]
