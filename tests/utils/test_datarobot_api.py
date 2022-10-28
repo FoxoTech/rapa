@@ -127,8 +127,13 @@ def test_datarobot_project_retrieval():
 
     # 5. Name provided fetches no project
     wrong_project_name = conf.classification_project_name + 'string'
-    bc_classification_project = rapa.utils.find_project(wrong_project_name)
-    assert bc_classification_project is None, f'5. Project using {wrong_project_name} was found (it should not have found a project...?)'
+    try:
+        bc_classification_project = rapa.utils.find_project(wrong_project_name)
+    except Exception:
+        # excpected
+        pass
+    else:
+        raise Exception(f'5. Project using {wrong_project_name} was found (it should not have found a project...?)')
 
 # test retrieval of featurelists
 @pytest.mark.order(3)
@@ -166,8 +171,13 @@ def test_datarobot_featurelist_retrieval():
 
     # 4. Name is provided and fetches no featurelist
     wrong_featurelist_name = conf.featurelist_name + 'j923ifnoguhe'
-    bc_featurelist = rapa.utils.get_featurelist(wrong_featurelist_name, bc_classification_project)
-    assert bc_featurelist is None, f'4. Featurelist using `{wrong_featurelist_name}` to search was found (it should not have found a featurelist...?)'
+    try:
+        bc_featurelist = rapa.utils.get_featurelist(wrong_featurelist_name, bc_classification_project)
+    except Exception:
+        # expected
+        pass
+    else:
+        raise Exception(f'4. Featurelist using `{wrong_featurelist_name}` to search was found (it should not have found a featurelist...?)')
 
     # 5. Name is provided and fetches more than one featurelist
     substring = conf.featurelist_name[:-4]

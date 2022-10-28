@@ -1,3 +1,5 @@
+from ..rapa import version
+
 # classification and regression project known 'bests' for testing
 classification_project_name = 'TUTORIAL_breast_cancer'
 classification_project_id = '62b5dc8249ed6b10669ab468'
@@ -14,7 +16,7 @@ featurelist_prefix = 'TEST_0.0.9'
 featurelist_name = featurelist_prefix + ' (25)'
 featurelist_id = '62b5de67a92c8927b1fd710b'
 starting_featurelist_name = 'Informative Features'
-
+created_project_name = f"GA_TESTS rapa=={version.__version__}"
 
 
 random_state = 6
