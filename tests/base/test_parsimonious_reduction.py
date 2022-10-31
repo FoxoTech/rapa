@@ -55,7 +55,8 @@ def test_perform_parsimony():
         'cv_average_mean_error_limit': 1,
         'feature_impact_metric': 'mean',
         'progress_bar': False,
-        'verbose': True
+        'verbose': True,
+        'to_graph': ['models', 'feature_performance']
     }
 
     
