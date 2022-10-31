@@ -379,7 +379,7 @@ class RAPABase():
 
         project = dr.Project.create(sourcedata=input_data_df, project_name=project_name)
 
-        project.set_target(target=target_name, target_type=target_type,
+        project.analyze_and_model(target=target_name, target_type=target_type,
                         worker_count=worker_count, mode=mode, metric=metric,
                         advanced_options=dr.AdvancedOptions(seed=random_state, accuracy_optimized_mb=False,
                                                             prepare_model_for_deployment=False, blend_best_models=False),

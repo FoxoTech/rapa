@@ -46,7 +46,7 @@ def test_perform_parsimony():
     bc_classification._wait_for_jobs(project=project, progress_bar=False)
 
     options = {
-        'feature_range': [30, 20, 10],
+        'feature_range': [20, 10],
         'project': project,
         'starting_featurelist_name': 'Informative Features',
         'featurelist_prefix': f'rapa-{rapa.version.__version__}-Github Actions Test:',
