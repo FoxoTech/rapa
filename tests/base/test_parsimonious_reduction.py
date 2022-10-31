@@ -1,12 +1,9 @@
-from tkinter import E
-from tkinter.ttk import Progressbar
 import pytest
-import rapa
-import os
 import datarobot as dr
 from sklearn import datasets
 import pandas as pd
 from .. import conf
+import rapa
 
 created_project_name = conf.created_project_name
 
@@ -51,7 +48,7 @@ def test_perform_parsimony():
     options = {
         'feature_range': [30, 20, 10],
         'project': project,
-        'starting_featurelist': 'Informative Features',
+        'starting_featurelist_name': 'Informative Features',
         'featurelist_prefix': f'rapa-{rapa.version.__version__}-Github Actions Test:',
         'mode': dr.AUTOPILOT_MODE.QUICK,
         'lives': 3,
@@ -79,7 +76,7 @@ def test_perform_parsimony():
         bc_classification.perform_parsimony(
             feature_range=options['feature_range'],
             project=options['project'],
-            starting_featurelist='does_not_exist'
+            starting_featurelist_name='does_not_exist'
         )
     except Exception:
         # expected

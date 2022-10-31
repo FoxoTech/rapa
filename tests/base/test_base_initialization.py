@@ -2,6 +2,7 @@ import pytest
 import rapa
 
 # test rapa.base.RAPABase initialization
+@pytest.mark.order(0)
 def test_RAPABase_initialization():
     '''Checks that the rapa.base.RAPABase objects can't be initialized directly, and 
     should be initialized with a child class.
