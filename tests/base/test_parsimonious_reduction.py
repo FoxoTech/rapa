@@ -100,3 +100,4 @@ def test_perform_parsimony():
     bc_classification.perform_parsimony(
         **options
     )
+    project.delete()
