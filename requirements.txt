@@ -7,5 +7,6 @@ tqdm
 seaborn
 sphinxcontrib-apidoc
 m2r
+mistune==0.8.4
 nbsphinx
 myst-parser

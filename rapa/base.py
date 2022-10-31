@@ -46,12 +46,9 @@ class RAPABase():
     * target_type = None # Set at initialization
     * project = None # Set at initialization or with 'perform_parsimony()'"""
 
-    def __init__(self, project: Union[dr.Project, str] = None):
+    def __init__(self):
         if self.__class__.__name__ == "RAPABase":
             raise RuntimeError("Do not instantiate the RAPABase class directly; use RAPAClassif or RAPARegress")
-        self._classification = None
-        self.target_type = None
-        self.project = None
 
     @staticmethod
     def _wait_for_jobs(project: dr.Project, progress_bar: bool = True, sleep_time: int = 5, pbar = None, pbar_prefix: str = '', job_type: str = '', timeout = 21600):
@@ -382,7 +379,7 @@ class RAPABase():
 
         project = dr.Project.create(sourcedata=input_data_df, project_name=project_name)
 
-        project.set_target(target=target_name, target_type=target_type,
+        project.analyze_and_model(target=target_name, target_type=target_type,
                         worker_count=worker_count, mode=mode, metric=metric,
                         advanced_options=dr.AdvancedOptions(seed=random_state, accuracy_optimized_mb=False,
                                                             prepare_model_for_deployment=False, blend_best_models=False),
@@ -513,10 +510,7 @@ class RAPABase():
                 raise Exception(f'Could not find the project.')
         
         # get starting featurelist
-        try:
-            starting_featurelist = utils.get_featurelist(starting_featurelist_name, project)
-        except: # TODO: flesh out exceptions
-            tqdm.write("Something went wrong getting the starting featurelist...")
+        starting_featurelist = utils.get_featurelist(starting_featurelist_name, project)
 
         # check feature_range size
         if len(feature_range) == 0:

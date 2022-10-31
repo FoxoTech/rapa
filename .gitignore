@@ -134,3 +134,4 @@ data/*
 tutorials/data
 tutorials/data/*
 testing.ipynb
+tests/test.ipynb

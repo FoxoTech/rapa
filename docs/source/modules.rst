@@ -5,7 +5,7 @@ API Reference
 Classes
 ----------------
 
-.. automodule:: rapa.rapa
+.. automodule:: rapa.Project
    :members:
    :undoc-members:
    :show-inheritance:

@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import seaborn as sb
 
 LOGGER = logging.getLogger(__name__)
-
+    
 
 def find_project(project: str) -> dr.Project:
     """Uses the DataRobot api to find a current project.
@@ -50,8 +50,7 @@ def find_project(project: str) -> dr.Project:
     except ClientError: # id was not provided, most likely a name
         project_list = dr.Project.list(search_params={'project_name': project})
         if len(project_list) == 0: # probably wrong id, check id?
-            warn(f"No projects found with id or search for \'{project}\'")
-            return None
+            raise Exception(f"No projects found with id/string of \'{project}\'")
         elif len(project_list) == 1: # found one project with search, good
             return project_list[0]
         else: # more than one project was found
@@ -59,11 +58,12 @@ def find_project(project: str) -> dr.Project:
             return project_list[0]
     
 
-# if changing get_best_model, check if it's alias get_starred_model needs changing
 def get_best_model(project: dr.Project, 
-                featurelist_prefix: str = None, 
-                starred: bool = False, 
-                metric: str = 'AUC') -> dr.Model:
+                    featurelist_prefix: str = None, 
+                    starred: bool = False, 
+                    metric: str = None,
+                    fold: str = 'crossValidation',
+                    highest: bool = None) -> dr.Model:
     """Attempts to find the 'best' model in a datarobot by searching cross validation scores of all the
     models in a supplied project. # TODO make dictionary for minimize/maximize 
 
@@ -75,16 +75,16 @@ def get_best_model(project: dr.Project,
         (Make sure 'starred = True' if starring the 'best' model) 
 
     .. note::
-        Some models may not have cross validation scores because they were not run. These
-        models are ignored by this function. Cross validate all models if each model should be 
-        considered.
+        Some models may not have scores for the supplied fold because they were not run. These
+        models are ignored by this function. Make sure all models of interest have scores for
+        the fold being provided if those models should be considered.
 
     :Parameters:
     ----------
         project: datarobot.Project
             The project object that will be searched for the 'best' model
 
-        featurelist_prefix: str, optional (default = 'RAPA Reduced to')
+        featurelist_prefix: str, optional (default = None)
             The desired featurelist prefix used to search in for models using specific
             rapa featurelists
 
@@ -92,8 +92,21 @@ def get_best_model(project: dr.Project,
             If True, return the starred model. If there are more than one starred models,
             then warn the user and return the 'best' one
 
-        metric: str, optional (default = 'AUC')
-            What model cross validation metric to use when averaging scores
+        metric: str, optional (default = 'AUC' or 'RMSE') [classification and regression]
+            What model metric to use when finding the 'best'
+        
+        fold: str, optional (default = 'crossValidation')
+            The fold of data used in DataRobot. Options are as follows:
+                ['validation', 
+                'crossValidation', 
+                'holdout', 
+                'training', 
+                'backtestingScores', 
+                'backtesting']
+        
+        highest: bool, optional (default for classification = True, default for regression = False)
+            Whether to take the highest value (highest = True), or the lowest
+            value (highest = False). Change this when assumed switch is 
     
     :Returns:
     ----------
@@ -101,59 +114,63 @@ def get_best_model(project: dr.Project,
             A datarobot model that is either the 'best', starred, or the 'best' of the starred models
             from the provided datarobot project
     """
-
-    all_models = []
-    if featurelist_prefix: # if featurelist_prefix is not none or empty
-        for model in project.get_models():
-            if model.featurelist_name != None:
-                if model.featurelist_name.lower().startswith(featurelist_prefix.lower()):
-                    all_models.append(model)
-    else:
-        all_models = project.get_models() # Retrieve all models from the supplied project
     
-    if len(all_models) == 0:
-        return None
+    # if metric is missing, assume a metric
+    if metric == None:
+        if project.target_type == dr.TARGET_TYPE.BINARY or project.target_type == dr.TARGET_TYPE.MULTICLASS:
+            # classification
+            metric = 'AUC'
+        elif project.target_type == dr.TARGET_TYPE.REGRESSION:
+            # regression
+            metric = 'RMSE'
 
-    if starred: # if the model is starred logic
-        starred_models = []
-        for model in all_models: # find each starred model
-            if model.is_starred:
-                starred_models.append(model)
-        if len(starred_models) == 0:
-            warn(f'There are no starred models in \'{project}\'. Will try to return the \'best\' model.')
-        elif len(starred_models) == 1: # if there is a starred model, return it regardless of whether or not it has been cross-validated
-            return starred_models[0]
-        else: # more than one model is starred
-            averages = {} # keys are average scores and values are the models
-            num_no_cv = 0
-            for starred_model in starred_models:
-                try:
-                    averages[mean(starred_model.get_cross_validation_scores()['cvScores'][metric].values())] = starred_model
-                except ClientError: # the model wasn't cross-validated
-                    num_no_cv += 1
-            if len(averages) == 0:
-                warn(f'The starred models were not cross-validated!')
-                return None
-            else:
-                return averages[sorted(averages.keys())[-1]] # highest metric is 'best' TODO: support the other metrics
-    else: # starred == False
-        averages = {} # keys are average scores and values are the models
-        num_no_cv = 0
-        for model in all_models:
-            try:
-                averages[mean(model.get_cross_validation_scores()['cvScores'][metric].values())] = model
-            except ClientError: # the model wasn't cross-validated
-                num_no_cv += 1
+    # if highest is missing, assume a direction
+    if highest == None:
+        if project.target_type == dr.TARGET_TYPE.BINARY or project.target_type == dr.TARGET_TYPE.MULTICLASS:
+            # classification
+            highest = True
+        elif project.target_type == dr.TARGET_TYPE.REGRESSION:
+            highest = False
 
-        if len(averages) == 0:
-            warn(f'There were no cross-validated models in "{project}"')
-            return None
-        else:
-            return averages[sorted(averages.keys())[-1]] # highest metric is 'best' TODO: support the other metrics
+    scores = []
+
+    #### get scores
+
+    # set featurelist_prefix to '' for ease of use in code
+    if not starred: # the model(s) is/are not starred
+        if featurelist_prefix == None: 
+            featurelist_prefix = ''
+
+        for model in project.get_models():
+            current_model_score = model.metrics[metric][fold] # get the score for the metric and fold
+
+            if model.featurelist_name.startswith(featurelist_prefix) and current_model_score: # if the model is scored in this fold, and it was created with the featurelist we are looking at
+                scores.append((current_model_score, model)) # add the model score and model object to a list
+    else: # the model(s) is/are starred
+        if featurelist_prefix == None: 
+            featurelist_prefix = ''
+
+        for model in project.get_models():
+            current_model_score = model.metrics[metric][fold] # get the score for the metric and fold
+
+            if model.is_starred and model.featurelist_name.startswith(featurelist_prefix) and current_model_score: # if the model is scored in this fold, and it was created with the featurelist we are looking at
+                scores.append((current_model_score, model)) # add the model score and model object to a list
+
+
+    #### find the best scores
+
+    # check that there are any models
+    if len(scores) > 1: # multiple models
+        return sorted(scores, key=lambda tup: tup[0], reverse=highest)[0][1] # sort by first item in the tuples
+    elif len(scores) == 1: # one model
+        return scores[0][1]
+    else: # no models
+        raise Exception(f"No models found. \n Parameters: project=`{project}`, metric=`{metric}`, fold=`{fold}`, featurelist_prefix=`{featurelist_prefix}`, starred=`{starred}`, highest=`{highest}`")
+
 
 # alias for get_best_model
 def get_starred_model(project: dr.Project, 
-                    metric: str = 'AUC',
+                    metric: str = None,
                     featurelist_prefix: str = None) -> dr.Model:
     """Alias for rapa.utils.get_best_model() but makes starred = True
     """
@@ -232,10 +249,9 @@ def get_featurelist(featurelist: str,
     else: # if dr_featurelist is empty
         dr_featurelist = [x for x in featurelists if featurelist.lower() in str(x.name).lower()] # use python's `in` to search strings
         if not dr_featurelist: # if dr_featurelist is empty
-            warn(f'No featurelists were found with either the id or name of \'{featurelist}\'')
-            return None
+            raise Exception(f"No featurelists were found with the id/name of \'{featurelist}\'")
         elif len(dr_featurelist) > 1: # if dr_featurelist has more than 1
-            warn(f'More than one featurelist were found: \'{dr_featurelist}\', returning the first.')
+            warn(f'More than one featurelist was found: \'{dr_featurelist}\', returning the first.')
             return dr_featurelist[0]
         else: # dr_Featurelist has 1
             return dr_featurelist[0]
@@ -244,7 +260,7 @@ def get_featurelist(featurelist: str,
 def parsimony_performance_boxplot(project: dr.Project, 
                                 featurelist_prefix: str = 'RAPA Reduced to',
                                 starting_featurelist: str = None,
-                                metric: str = 'AUC',
+                                metric: str = None,
                                 split: str = 'crossValidation',
                                 featurelist_lengths: list = None):
     """Uses `seaborn`'s `boxplot` function to plot featurelist size vs performance
@@ -264,7 +280,7 @@ def parsimony_performance_boxplot(project: dr.Project,
             The starting featurelist used for parsimony analysis. If None, only
             the featurelists with the desired prefix in `featurelist_prefix` will be plotted
 
-        metric: str, optional (default = 'AUC')
+        metric: str, optional (default = 'AUC' or 'RMSE') [classification and regression]
             The metric used for plotting accuracy of models
 
         split: str, optional (default = 'crossValidation')
@@ -281,6 +297,15 @@ def parsimony_performance_boxplot(project: dr.Project,
     # if `project` is a string, find the project
     if type(project) is str:
         project = find_project(project)
+
+    # if metric is missing, assume a metric
+    if metric == None:
+        if project.target_type == dr.TARGET_TYPE.BINARY or project.target_type == dr.TARGET_TYPE.MULTICLASS:
+            # classification
+            metric = 'AUC'
+        elif project.target_type == dr.TARGET_TYPE.REGRESSION:
+            # regression
+            metric = 'RMSE'
 
 
     datarobot_project_models = project.get_models() # get all the models in the provided project
@@ -330,7 +355,7 @@ def feature_performance_stackplot(project: dr.Project,
                                 featurelist_prefix: str = 'RAPA Reduced to',
                                 starting_featurelist: str = None,
                                 feature_impact_metric: str = 'median',
-                                metric: str = 'AUC',
+                                metric: str = None,
                                 vlines: bool = False):
     """Utilizes `matplotlib.pyplot.stackplot` to show feature performance during 
     parsimony analysis.
@@ -356,7 +381,7 @@ def feature_performance_stackplot(project: dr.Project,
                 * mean
                 * cumulative
 
-        metric: str, optional (default = 'AUC')
+        metric: str, optional (default = 'AUC' or 'RMSE') [classification and regression]
             Which metric to use when finding feature importance of each model
         
         vlines: bool, optional (default = False)
@@ -369,6 +394,15 @@ def feature_performance_stackplot(project: dr.Project,
     # if `project` is a string, find the project
     if type(project) is str:
         project = find_project(project)
+
+    # if metric is missing, assume a metric
+    if metric == None:
+        if project.target_type == dr.TARGET_TYPE.BINARY or project.target_type == dr.TARGET_TYPE.MULTICLASS:
+            # classification
+            metric = 'AUC'
+        elif project.target_type == dr.TARGET_TYPE.REGRESSION:
+            # regression
+            metric = 'RMSE'
     
     if starting_featurelist:
         if type(starting_featurelist) == str:
