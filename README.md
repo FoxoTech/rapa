@@ -288,4 +288,3 @@ In addition to this readme, there is a tutorial for using `rapa` with DataRobot 
 
 ## Plans
 Although the current implementation of these features will be based on basic techniques such as linear feature filters and recursive feature elimination, we plan to rapidly improve these features by integrating state-of-the-art techniques from the academic literature.
-
