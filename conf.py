@@ -24,7 +24,7 @@ apidoc_separate_modules = False
 # -- Project information -----------------------------------------------------
 
 project = 'rapa'
-copyright = '2021, FOXO Technologies'
+copyright = '2022, FOXO Technologies'
 author = 'FOXO Technologies'
 
 
