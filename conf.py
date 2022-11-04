@@ -18,6 +18,7 @@ print(os.listdir(), os.getcwd())
 
 apidoc_module_dir = '.'
 apidoc_output_dir = '_sphinx_build'
+apidoc_excluded_paths = ['tests']
 apidoc_separate_modules = False
 
 
