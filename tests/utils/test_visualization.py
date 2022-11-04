@@ -19,22 +19,22 @@ def test_plot_feature_performance_stackplot():
         3. wrong feature_impact_metric
     '''
     # 1. Mean metric, with vlines, and with a starting featurelist
-    for project, metric, vlines in [(conf.classification_project_name, 'mean', True)]:
-        rapa.utils.feature_performance_stackplot(project, featurelist_prefix=conf.featurelist_prefix,\
+    for project, metric, vlines in [(config.classification_project_name, 'mean', True)]:
+        rapa.utils.feature_performance_stackplot(project, featurelist_prefix=config.featurelist_prefix,\
                                                 feature_impact_metric=metric,\
                                                 metric='AUC', vlines=vlines,\
-                                                starting_featurelist=conf.starting_featurelist_name)
+                                                starting_featurelist=config.starting_featurelist_name)
     
     # 2. Cumulative metric, without vlines, and without a starting featurelist
-    for project, metric, vlines in [(conf.classification_project_name, 'cumulative', False)]:
-        rapa.utils.feature_performance_stackplot(project, featurelist_prefix=conf.featurelist_prefix,\
+    for project, metric, vlines in [(config.classification_project_name, 'cumulative', False)]:
+        rapa.utils.feature_performance_stackplot(project, featurelist_prefix=config.featurelist_prefix,\
                                                 feature_impact_metric=metric,\
                                                 metric='AUC', vlines=vlines)
 
     # 3. wrong feature_impact_metric
     try:
-        for project, metric, vlines in [(conf.classification_project_name, 'wrong', False)]:
-            rapa.utils.feature_performance_stackplot(project, featurelist_prefix=conf.featurelist_prefix,\
+        for project, metric, vlines in [(config.classification_project_name, 'wrong', False)]:
+            rapa.utils.feature_performance_stackplot(project, featurelist_prefix=config.featurelist_prefix,\
                                                     feature_impact_metric=metric,\
                                                     metric='AUC', vlines=vlines)
     except Exception:
@@ -53,6 +53,6 @@ def test_plot_feature_performance_stackplot():
 def test_plot_parsimony_model_performance():
     '''Tests that the model performance boxplots are created without errors (however... definitely will not catch bugs)
     '''
-    rapa.utils.parsimony_performance_boxplot(conf.classification_project_name,\
-                                            featurelist_prefix=conf.featurelist_prefix,\
-                                            starting_featurelist=conf.starting_featurelist_name,)
+    rapa.utils.parsimony_performance_boxplot(config.classification_project_name,\
+                                            featurelist_prefix=config.featurelist_prefix,\
+                                            starting_featurelist=config.starting_featurelist_name,)
