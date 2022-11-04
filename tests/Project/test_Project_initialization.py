@@ -6,7 +6,7 @@ import os
 import datarobot as dr
 from sklearn import datasets
 import pandas as pd
-from .. import conf
+from .. import config
 
 
 """
@@ -17,7 +17,7 @@ Tests are performend in the order they appear in the file, from the
 top down (using pytest-order)
 """
 
-created_project_name = conf.created_project_name
+created_project_name = config.created_project_name
 
 n_splits = 6
 n_features = 20
@@ -75,7 +75,7 @@ def test_creating_submittable_dataframe():
     sub_df = bc_classification.create_submittable_dataframe(breast_cancer_df,
                                                             target_name=target,
                                                             n_splits=6,
-                                                            random_state=conf.random_state)
+                                                            random_state=config.random_state)
     # checking that no columns are lost
     assert sub_df.columns.isin(breast_cancer_df.columns).sum() == len(
         breast_cancer_df.columns)
@@ -89,7 +89,7 @@ def test_creating_submittable_dataframe():
     sub_df = bc_classification.create_submittable_dataframe(breast_cancer_df,
                                                             target_name=target,
                                                             n_splits=6,
-                                                            random_state=conf.random_state,
+                                                            random_state=config.random_state,
                                                             n_features=n_features)
     # checking that the correct number of featres exists
     assert sub_df.columns.isin(breast_cancer_df.columns).sum() == n_features+1
@@ -99,7 +99,7 @@ def test_creating_submittable_dataframe():
     sub_df = bc_regression.create_submittable_dataframe(breast_cancer_df,
                                                             target_name=target,
                                                             n_splits=6,
-                                                            random_state=conf.random_state,
+                                                            random_state=config.random_state,
                                                             n_features=n_features)
     # checking that the correct number of featres exists
     assert sub_df.columns.isin(breast_cancer_df.columns).sum() == n_features+1
@@ -112,7 +112,7 @@ def test_creating_submittable_dataframe():
         sub_df = bc_classification.create_submittable_dataframe(breast_cancer_df,
                                                                 target_name=absent_target,
                                                                 n_splits=6,
-                                                                random_state=conf.random_state,
+                                                                random_state=config.random_state,
                                                                 n_features=n_features)
     except KeyError:
         # this is expected
@@ -138,12 +138,12 @@ def test_submitting_datarobot_project():
     sub_df = bc_classification.create_submittable_dataframe(breast_cancer_df,
                                                             target_name=target,
                                                             n_splits=6,
-                                                            random_state=conf.random_state)
+                                                            random_state=config.random_state)
     project = bc_classification.submit_datarobot_project(sub_df,
                                                         target,
                                                         created_project_name+'_classification',
                                                         mode=dr.AUTOPILOT_MODE.QUICK,
-                                                        random_state=conf.random_state)
+                                                        random_state=config.random_state)
     bc_classification._wait_for_jobs(project=project, progress_bar=False)
     project.delete()
     
@@ -153,12 +153,12 @@ def test_submitting_datarobot_project():
     sub_df = bc_regression.create_submittable_dataframe(breast_cancer_df,
                                                             target_name=regression_target,
                                                             n_splits=6,
-                                                            random_state=conf.random_state)
+                                                            random_state=config.random_state)
     project = bc_regression.submit_datarobot_project(sub_df,
                                                         regression_target,
                                                         created_project_name+'_regression',
                                                         mode=dr.AUTOPILOT_MODE.QUICK,
-                                                        random_state=conf.random_state)
+                                                        random_state=config.random_state)
     bc_regression._wait_for_jobs(project=project, progress_bar=False)
     project.delete()
 

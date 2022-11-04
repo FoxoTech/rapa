@@ -2,10 +2,10 @@ import pytest
 import datarobot as dr
 from sklearn import datasets
 import pandas as pd
-from .. import conf
+from .. import config
 import rapa
 
-created_project_name = conf.created_project_name
+created_project_name = config.created_project_name
 
 n_splits = 6
 n_features = 20
@@ -36,12 +36,12 @@ def test_perform_parsimony():
     sub_df = bc_classification.create_submittable_dataframe(breast_cancer_df,
                                                             target_name=target,
                                                             n_splits=6,
-                                                            random_state=conf.random_state)
+                                                            random_state=config.random_state)
     project = bc_classification.submit_datarobot_project(sub_df,
                                                         target,
                                                         created_project_name+'_classification',
                                                         mode=dr.AUTOPILOT_MODE.QUICK,
-                                                        random_state=conf.random_state)
+                                                        random_state=config.random_state)
 
     bc_classification._wait_for_jobs(project=project, progress_bar=False)
 
