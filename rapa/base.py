@@ -205,6 +205,7 @@ class RAPABase():
                 The number of cross-validation splits to create. One of the splits
                 will be retained as a holdout split, so by default this function
                 sets up the dataset for 5-fold cross-validation with a holdout.
+                NOTE: `CV Fold 0` is the holdout set by default.
 
             filter_function: callable, optional (default: None)
                 The function used to calculate the importance of each feature in
